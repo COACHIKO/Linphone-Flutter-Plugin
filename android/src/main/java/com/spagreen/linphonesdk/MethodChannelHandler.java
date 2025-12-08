@@ -90,6 +90,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
                             Manifest.permission.CHANGE_NETWORK_STATE,
                             Manifest.permission.ACCESS_WIFI_STATE,
                             Manifest.permission.CHANGE_WIFI_STATE,
+                            Manifest.permission.MANAGE_OWN_CALLS,
                     };
                     boolean isSuccess = new Utils().checkPermissions(permissionArrays, activity);
                     if (isSuccess) {
@@ -110,9 +111,103 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
                 linPhoneHelper.rejectCall();
                 result.success(true);
                 break;
+            case "start_background_service":
+                Map serviceData = (Map) call.arguments;
+                String svcUsername = (String) serviceData.get("userName");
+                String svcDomain = (String) serviceData.get("domain");
+                String svcPassword = (String) serviceData.get("password");
+                startBackgroundService(svcUsername, svcPassword, svcDomain);
+                result.success(true);
+                break;
+            case "stop_background_service":
+                stopBackgroundService();
+                result.success(true);
+                break;
+            case "is_service_running":
+                boolean isRunning = isServiceRunning();
+                result.success(isRunning);
+                break;
+            case "has_active_call":
+                boolean hasCall = hasActiveCall();
+                result.success(hasCall);
+                break;
+            case "open_call_screen":
+                openCallScreen();
+                result.success(true);
+                break;
             default:
                 result.notImplemented();
                 break;
         }
     }
+    
+    private boolean hasActiveCall() {
+        LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
+        if (service != null) {
+            org.linphone.core.Core core = service.getCore();
+            if (core != null) {
+                return core.getCallsNb() > 0;
+            }
+        }
+        return false;
+    }
+    
+    private void openCallScreen() {
+        LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
+        if (service != null && hasActiveCall()) {
+            org.linphone.core.Core core = service.getCore();
+            if (core != null && core.getCurrentCall() != null) {
+                org.linphone.core.Call call = core.getCurrentCall();
+                
+                String callerName = "Unknown";
+                String callerNumber = "Unknown";
+                
+                if (call.getRemoteAddress() != null) {
+                    if (call.getRemoteAddress().getDisplayName() != null) {
+                        callerName = call.getRemoteAddress().getDisplayName();
+                    }
+                    if (call.getRemoteAddress().getUsername() != null) {
+                        callerNumber = call.getRemoteAddress().getUsername();
+                    }
+                }
+                
+                android.content.Intent intent = new android.content.Intent(activity, CallActivity.class);
+                intent.putExtra("caller_name", callerName);
+                intent.putExtra("caller_number", callerNumber);
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                activity.startActivity(intent);
+            }
+        }
+    }
+    
+    private void startBackgroundService(String username, String password, String domain) {
+        // Check for RECORD_AUDIO permission before starting the service
+        if (androidx.core.content.ContextCompat.checkSelfPermission(activity, 
+                android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            android.util.Log.e("LinphonePlugin", "RECORD_AUDIO permission not granted! Cannot start background service.");
+            throw new SecurityException("RECORD_AUDIO permission is required to start the background service");
+        }
+        
+        android.content.Intent intent = new android.content.Intent(activity, LinphoneBackgroundService.class);
+        intent.setAction("REGISTER");
+        intent.putExtra("username", username);
+        intent.putExtra("password", password);
+        intent.putExtra("domain", domain);
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            activity.startForegroundService(intent);
+        } else {
+            activity.startService(intent);
+        }
+    }
+    
+    private void stopBackgroundService() {
+        android.content.Intent intent = new android.content.Intent(activity, LinphoneBackgroundService.class);
+        activity.stopService(intent);
+    }
+    
+    private boolean isServiceRunning() {
+        return LinphoneBackgroundService.getInstance() != null;
+    }
 }
+

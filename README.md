@@ -102,4 +102,4 @@ Check out the [example](https://github.com/MuhammadDaniyal32/Linphone-Flutter-Pl
 Contributions are welcome! Please submit issues and pull requests to help improve the plugin.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the LICENSE file for details.# androiSip

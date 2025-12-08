@@ -25,8 +25,11 @@ public class Utils {
             }
          }
          if (!listPermissionsNeeded.isEmpty()) {
+            // Request permissions - this will show the system dialog
             ActivityCompat.requestPermissions(activity, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), 1111);
-            return false;
+            // Return true to indicate we're handling the request
+            // The actual permission grant/deny will be handled by Android's callback
+            return true;
          }
       }catch (Exception e){
          e.printStackTrace();

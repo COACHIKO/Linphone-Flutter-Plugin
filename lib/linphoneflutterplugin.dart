@@ -71,6 +71,40 @@ class LinphoneFlutterPlugin {
     return await _channel.invokeMethod("rejectCall");
   }
 
+  /// Start the background service to maintain registration even when app is closed
+  Future<void> startBackgroundService({
+    required String userName,
+    required String domain,
+    required String password,
+  }) async {
+    var data = {"userName": userName, "domain": domain, "password": password};
+    return await _channel.invokeMethod("start_background_service", data);
+  }
+
+  /// Stop the background service
+  Future<void> stopBackgroundService() async {
+    return await _channel.invokeMethod("stop_background_service");
+  }
+
+  /// Check if background service is running
+  Future<bool> isServiceRunning() async {
+    return await _channel.invokeMethod("is_service_running");
+  }
+
+  /// Check if there's an active call
+  Future<bool> hasActiveCall() async {
+    try {
+      return await _channel.invokeMethod("has_active_call") ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Open the call screen
+  Future<void> openCallScreen() async {
+    return await _channel.invokeMethod("open_call_screen");
+  }
+
   Stream<LoginState> addLoginListener() {
     return _loginEventListener.receiveBroadcastStream().map((event) {
       LoginState loginState = LoginState.none;
