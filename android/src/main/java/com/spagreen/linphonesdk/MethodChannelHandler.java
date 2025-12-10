@@ -63,8 +63,18 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
             case "call":
                 Map callData = (Map) call.arguments;
                 String number = (String) callData.get("number");
-                linPhoneHelper.call(number);
-                result.success(true);
+                
+                // Check if background service is running
+                LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
+                if (service != null) {
+                    // Use background service for call (preferred method)
+                    boolean callSuccess = LinphoneBackgroundService.makeCall(number);
+                    result.success(callSuccess);
+                } else {
+                    // Fallback to old method if service not running
+                    linPhoneHelper.call(number);
+                    result.success(true);
+                }
                 break;
             case "transfer":
                 Map destinationMap = (Map) call.arguments;

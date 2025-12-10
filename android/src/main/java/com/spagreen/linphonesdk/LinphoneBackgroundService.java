@@ -624,6 +624,27 @@ public class LinphoneBackgroundService extends Service {
         }
     }
 
+    private static void setEarpieceOnCallStart(Call call) {
+        if (core == null || call == null) {
+            Log.e(TAG, "setEarpieceOnCallStart: Core or call is null");
+            return;
+        }
+
+        try {
+            // Find earpiece device and switch to it (normal phone behavior)
+            for (org.linphone.core.AudioDevice device : core.getAudioDevices()) {
+                if (device.getType() == org.linphone.core.AudioDevice.Type.Earpiece) {
+                    call.setOutputAudioDevice(device);
+                    Log.d(TAG, "Call started with earpiece (normal volume)");
+                    return;
+                }
+            }
+            Log.d(TAG, "No earpiece device found, using default audio device");
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting earpiece on call start", e);
+        }
+    }
+
     public static void toggleSpeakerFromActivity() {
         if (core == null) {
             Log.e(TAG, "toggleSpeakerFromActivity: Core is null");
@@ -784,6 +805,77 @@ public class LinphoneBackgroundService extends Service {
         }
     }
 
+    /**
+     * Make an outgoing call using the background service's Core instance.
+     * This ensures calls work even when the app is in background.
+     * 
+     * @param number The SIP address or phone number to call
+     * @return true if call was initiated successfully, false otherwise
+     */
+    public static boolean makeCall(String number) {
+        Log.i(TAG, "makeCall: Initiating outgoing call to " + number);
+        
+        if (core == null) {
+            Log.e(TAG, "makeCall: Core is null, cannot make call");
+            return false;
+        }
+
+        if (instance == null) {
+            Log.e(TAG, "makeCall: Service instance is null");
+            return false;
+        }
+
+        try {
+            // Get the default account
+            Account account = core.getDefaultAccount();
+            if (account == null) {
+                Log.e(TAG, "makeCall: No default account configured");
+                return false;
+            }
+
+            // Check registration state
+            RegistrationState regState = account.getState();
+            if (regState != RegistrationState.Ok) {
+                Log.w(TAG, "makeCall: Account not registered. State: " + regState);
+                // Attempt to make call anyway as Linphone might still work
+            }
+
+            // Create the SIP address
+            Address remoteAddress;
+            if (number.startsWith("sip:")) {
+                remoteAddress = Factory.instance().createAddress(number);
+            } else {
+                // Add sip: prefix and domain if needed
+                String domain = account.getParams().getIdentityAddress().getDomain();
+                String sipUri = "sip:" + number + "@" + domain;
+                remoteAddress = Factory.instance().createAddress(sipUri);
+            }
+
+            if (remoteAddress == null) {
+                Log.e(TAG, "makeCall: Failed to create remote address from: " + number);
+                return false;
+            }
+
+            // Create call params (use default params)
+            org.linphone.core.CallParams params = core.createCallParams(null);
+            
+            // Initiate the call
+            Call call = core.inviteAddressWithParams(remoteAddress, params);
+            
+            if (call != null) {
+                Log.d(TAG, "✓ Call initiated successfully to: " + remoteAddress.asStringUriOnly());
+                return true;
+            } else {
+                Log.e(TAG, "makeCall: core.inviteAddressWithParams() returned null");
+                return false;
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "makeCall: Exception occurred", e);
+            return false;
+        }
+    }
+
     // ===== End of static methods for CallActivity =====
 
     private void saveCredentials(String username, String password, String domain) {
@@ -880,6 +972,8 @@ public class LinphoneBackgroundService extends Service {
                     stopRingtone();
                     // Dismiss incoming call notification
                     dismissIncomingCallNotification();
+                    // Set earpiece as default audio device when call connects
+                    setEarpieceOnCallStart(call);
                     // Launch call activity first (will set visibility flag)
                     launchCallActivity(call);
                     // Show ongoing call notification (will check visibility flag)

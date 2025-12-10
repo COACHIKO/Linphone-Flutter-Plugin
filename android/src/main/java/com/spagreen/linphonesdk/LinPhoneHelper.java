@@ -164,7 +164,13 @@ public class LinPhoneHelper {
 
     public void toggleSpeaker() {
         // Get the currently used audio device
-        AudioDevice currentAudioDevice = core.getCurrentCall().getOutputAudioDevice();
+        Call currentCall = core.getCurrentCall();
+        if (currentCall == null) {
+            Log.e(TAG, "toggleSpeaker: No active call");
+            return;
+        }
+        
+        AudioDevice currentAudioDevice = currentCall.getOutputAudioDevice();
         boolean speakerEnabled = currentAudioDevice.getType() == AudioDevice.Type.Speaker;
 
         // We can get a list of all available audio devices using
@@ -176,10 +182,12 @@ public class LinPhoneHelper {
         for (int i = 0; i < core.getAudioDevices().length; i++) {
             AudioDevice audioDevice = core.getAudioDevices()[i];
             if (speakerEnabled && audioDevice.getType() == AudioDevice.Type.Earpiece) {
-                core.getCurrentCall().setOutputAudioDevice(audioDevice);
+                currentCall.setOutputAudioDevice(audioDevice);
+                Log.d(TAG, "Switched to Earpiece");
                 return;
             } else if (!speakerEnabled && audioDevice.getType() == AudioDevice.Type.Speaker) {
-                core.getCurrentCall().setOutputAudioDevice(audioDevice);
+                currentCall.setOutputAudioDevice(audioDevice);
+                Log.d(TAG, "Switched to Speaker");
                 return;
             }
         }
