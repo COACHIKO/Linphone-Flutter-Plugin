@@ -153,6 +153,11 @@ public class LinphoneBackgroundService extends Service {
                     openFlutterAppAndAnswer();
                     dismissIncomingCallNotification();
                     break;
+                case "ANSWER_CALL_FROM_NOTIFICATION":
+                    // Production-grade handler for notification accept button
+                    Log.i(TAG, "🔔 Service resurrected to handle notification accept");
+                    acceptCallAndLaunchUI();
+                    break;
                 case "DECLINE_CALL":
                 case "ACTION_DECLINE_CALL":
                     declineCall();
@@ -323,6 +328,91 @@ public class LinphoneBackgroundService extends Service {
             Log.d(TAG, "CallActivity launched immediately after accepting call");
         } catch (Exception e) {
             Log.e(TAG, "Error accepting call", e);
+        }
+    }
+
+    /**
+     * Production-grade method to accept call and launch UI in all app states.
+     * Handles foreground, background, and terminated states with proper activity management.
+     * 
+     * Strategy:
+     * 1. Close IncomingCallActivity if open
+     * 2. Accept the call immediately
+     * 3. Launch CallActivity with appropriate flags for all states
+     * 4. Dismiss incoming call notification
+     * 5. Ensure activity is brought to foreground
+     */
+    private void acceptCallAndLaunchUI() {
+        Log.i(TAG, "acceptCallAndLaunchUI: Starting production-grade call acceptance flow");
+        
+        // Step 1: Find the call to answer
+        Call call = currentIncomingCall;
+        if (call == null && core != null && core.getCallsNb() > 0) {
+            call = core.getCurrentCall();
+            if (call == null && core.getCalls().length > 0) {
+                call = core.getCalls()[0];
+            }
+        }
+
+        if (call == null) {
+            Log.e(TAG, "acceptCallAndLaunchUI: No call found to answer");
+            return;
+        }
+
+        try {
+            // Step 2: Close IncomingCallActivity to prevent UI conflicts
+            Intent closeIncomingIntent = new Intent("com.spagreen.linphonesdk.CLOSE_INCOMING_CALL");
+            sendBroadcast(closeIncomingIntent);
+            Log.d(TAG, "✓ Broadcast sent to close IncomingCallActivity");
+
+            // Step 3: Accept the call
+            call.accept();
+            Log.d(TAG, "✓ Call accepted successfully");
+            currentIncomingCall = null;
+
+            // Step 4: Prepare caller information
+            String callerName = call.getRemoteAddress().getDisplayName();
+            if (callerName == null || callerName.isEmpty()) {
+                callerName = call.getRemoteAddress().getUsername();
+            }
+            String callerNumber = call.getRemoteAddress().getUsername();
+            Log.d(TAG, "Caller info - Name: " + callerName + ", Number: " + callerNumber);
+
+            // Step 5: Launch CallActivity with robust flags
+            // CRITICAL: Use minimal flags to ensure activity always appears
+            Intent callActivityIntent = new Intent(this, CallActivity.class);
+            callActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            callActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            callActivityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            
+            // Add caller information
+            callActivityIntent.putExtra("caller_name", callerName);
+            callActivityIntent.putExtra("caller_number", callerNumber);
+            callActivityIntent.putExtra("auto_accepted", true); // Mark as auto-accepted from notification
+            
+            // Launch the activity
+            Log.d(TAG, "🚀 Launching CallActivity with flags: NEW_TASK | CLEAR_TOP | SINGLE_TOP");
+            startActivity(callActivityIntent);
+            Log.d(TAG, "✓ CallActivity.startActivity() called successfully");
+
+            // Step 6: Dismiss incoming call notification
+            dismissIncomingCallNotification();
+            Log.d(TAG, "✓ Incoming call notification dismissed");
+
+            Log.i(TAG, "✓✓✓ Call acceptance flow completed successfully ✓✓✓");
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error in acceptCallAndLaunchUI", e);
+            
+            // Fallback: Try to at least accept the call even if UI launch fails
+            try {
+                if (call != null && call.getState() == Call.State.IncomingReceived) {
+                    call.accept();
+                    Log.d(TAG, "⚠️ Call accepted in fallback mode (UI may not be visible)");
+                }
+            } catch (Exception fallbackError) {
+                Log.e(TAG, "❌ Fallback call acceptance also failed", fallbackError);
+            }
         }
     }
 
@@ -663,12 +753,16 @@ public class LinphoneBackgroundService extends Service {
      * notification.
      * This avoids restarting the service and properly coordinates with
      * IncomingCallActivity.
+     * 
+     * Production-grade implementation that ensures CallActivity opens in all states:
+     * - Foreground: Direct activity launch
+     * - Background: Activity launch with proper flags
+     * - Terminated: Service resurrects and launches activity
      */
     public static void answerCallFromNotification() {
         Log.i(TAG, "answerCallFromNotification: Called from broadcast receiver");
         if (instance != null) {
-            instance.openFlutterAppAndAnswer();
-            instance.dismissIncomingCallNotification();
+            instance.acceptCallAndLaunchUI();
         } else {
             Log.e(TAG, "answerCallFromNotification: Service instance is null");
         }
@@ -829,14 +923,18 @@ public class LinphoneBackgroundService extends Service {
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Create accept action intent - use broadcast instead of service to avoid
-        // restart
-        Intent acceptIntent = new Intent(CallActionReceiver.ACTION_ANSWER_CALL);
-        acceptIntent.setPackage(getPackageName()); // Required for security
-        PendingIntent acceptPendingIntent = PendingIntent.getBroadcast(
+        // CRITICAL FIX: Create accept action that DIRECTLY launches CallActivity
+        // This ensures the UI always appears when accept is pressed
+        Intent acceptActivityIntent = new Intent(this, CallActivity.class);
+        acceptActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        acceptActivityIntent.putExtra("caller_name", call.getRemoteAddress().getDisplayName());
+        acceptActivityIntent.putExtra("caller_number", call.getRemoteAddress().getUsername());
+        acceptActivityIntent.putExtra("accept_on_create", true); // Signal to accept immediately
+        
+        PendingIntent acceptPendingIntent = PendingIntent.getActivity(
                 this,
                 1,
-                acceptIntent,
+                acceptActivityIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         // Create decline action intent - use broadcast instead of service to avoid
@@ -881,7 +979,7 @@ public class LinphoneBackgroundService extends Service {
         }
     }
 
-    private void dismissIncomingCallNotification() {
+    public void dismissIncomingCallNotification() {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager != null) {
             notificationManager.cancel(INCOMING_CALL_NOTIFICATION_ID);

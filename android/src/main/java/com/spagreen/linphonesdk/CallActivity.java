@@ -103,6 +103,38 @@ public class CallActivity extends Activity {
             Log.d(TAG, "Audio initialized to earpiece mode");
         }
         
+        // CRITICAL FIX: Auto-accept call if launched from notification accept button
+        boolean acceptOnCreate = getIntent().getBooleanExtra("accept_on_create", false);
+        if (acceptOnCreate) {
+            Log.i(TAG, "🎯 accept_on_create=true, auto-accepting call from notification");
+            // Accept the call immediately
+            Core core = LinphoneBackgroundService.getCore();
+            if (core != null) {
+                Call currentCall = core.getCurrentCall();
+                if (currentCall == null && core.getCallsNb() > 0) {
+                    currentCall = core.getCalls()[0];
+                }
+                if (currentCall != null && currentCall.getState() == Call.State.IncomingReceived) {
+                    try {
+                        currentCall.accept();
+                        Log.d(TAG, "✓ Call accepted successfully from CallActivity.onCreate()");
+                        // Close IncomingCallActivity if it's open
+                        sendBroadcast(new Intent("com.spagreen.linphonesdk.CLOSE_INCOMING_CALL"));
+                        // Dismiss incoming notification
+                        if (LinphoneBackgroundService.getInstance() != null) {
+                            LinphoneBackgroundService.getInstance().dismissIncomingCallNotification();
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Failed to accept call", e);
+                    }
+                } else {
+                    Log.w(TAG, "⚠️ No incoming call found to accept");
+                }
+            } else {
+                Log.e(TAG, "❌ Core is null, cannot accept call");
+            }
+        }
+        
         // Hide notification when call screen is visible
         LinphoneBackgroundService.setCallActivityVisible(true);
         
