@@ -33,17 +33,18 @@ class DialPadMainScreen extends StatefulWidget {
   State<DialPadMainScreen> createState() => _DialPadMainScreenState();
 }
 
-class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProviderStateMixin {
+class _DialPadMainScreenState extends State<DialPadMainScreen>
+    with TickerProviderStateMixin {
   final _linphoneSdkPlugin = LinphoneFlutterPlugin();
-  
+
   String _phoneNumber = '';
   late AnimationController _pulseController;
   late AnimationController _deleteController;
-  
+
   bool _isServiceRunning = false;
   bool _hasActiveCall = false;
   Timer? _statusCheckTimer;
-  
+
   @override
   void initState() {
     super.initState();
@@ -55,19 +56,20 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    
+
     _checkServiceStatus();
     _startStatusCheckTimer();
     _listenToCallState();
   }
-  
+
   void _startStatusCheckTimer() {
-    _statusCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _statusCheckTimer =
+        Timer.periodic(const Duration(seconds: 3), (timer) async {
       await _checkServiceStatus();
       await _checkActiveCall();
     });
   }
-  
+
   Future<void> _checkServiceStatus() async {
     try {
       bool isRunning = await _linphoneSdkPlugin.isServiceRunning();
@@ -78,7 +80,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
       // Ignore
     }
   }
-  
+
   Future<void> _checkActiveCall() async {
     try {
       bool hasCall = await _linphoneSdkPlugin.hasActiveCall();
@@ -89,7 +91,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
       // Ignore
     }
   }
-  
+
   void _listenToCallState() {
     _linphoneSdkPlugin.addCallStateListener().listen((state) {
       if (state == CallState.IncomingReceived) {
@@ -97,7 +99,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
       }
     });
   }
-  
+
   void _showIncomingCallDialog() {
     showDialog(
       context: context,
@@ -132,7 +134,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
       ),
     );
   }
-  
+
   @override
   void dispose() {
     _pulseController.dispose();
@@ -150,7 +152,8 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
   void _onDeletePressed() {
     if (_phoneNumber.isNotEmpty) {
       HapticFeedback.mediumImpact();
-      setState(() => _phoneNumber = _phoneNumber.substring(0, _phoneNumber.length - 1));
+      setState(() =>
+          _phoneNumber = _phoneNumber.substring(0, _phoneNumber.length - 1));
       _deleteController.forward(from: 0);
     }
   }
@@ -164,7 +167,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
 
   Future<void> _makeCall() async {
     if (_phoneNumber.isEmpty) return;
-    
+
     if (!_isServiceRunning) {
       _showSnackBar('⚠️ Please register first!', Colors.orange);
       _openRegistrationScreen();
@@ -172,16 +175,16 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
     }
 
     HapticFeedback.heavyImpact();
-    
+
     try {
       final numberToCall = _phoneNumber;
-      
+
       // Initiate the call
       await _linphoneSdkPlugin.call(number: numberToCall);
-      
+
       // Open native call screen immediately for better UX
       await _linphoneSdkPlugin.openCallScreen();
-      
+
       _showSnackBar('📞 Calling $numberToCall...', Colors.green);
     } catch (e) {
       _showSnackBar('❌ Call failed: $e', Colors.red);
@@ -193,7 +196,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
       context,
       MaterialPageRoute(builder: (context) => const SipRegistrationScreen()),
     );
-    
+
     if (result == true) {
       await _checkServiceStatus();
     }
@@ -292,13 +295,14 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                   ),
                 ),
               ),
-            
+
             // Phone Number Display
             Expanded(
               flex: 2,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -315,7 +319,9 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                         style: TextStyle(
                           fontSize: 38,
                           fontWeight: FontWeight.w300,
-                          color: _phoneNumber.isEmpty ? Colors.white38 : Colors.white,
+                          color: _phoneNumber.isEmpty
+                              ? Colors.white38
+                              : Colors.white,
                           letterSpacing: 3,
                         ),
                         textAlign: TextAlign.center,
@@ -325,17 +331,19 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                     if (_phoneNumber.isNotEmpty)
                       TextButton.icon(
                         onPressed: _clearNumber,
-                        icon: const Icon(Icons.close, color: Colors.redAccent, size: 18),
+                        icon: const Icon(Icons.close,
+                            color: Colors.redAccent, size: 18),
                         label: const Text(
                           'Clear',
-                          style: TextStyle(color: Colors.redAccent, fontSize: 14),
+                          style:
+                              TextStyle(color: Colors.redAccent, fontSize: 14),
                         ),
                       ),
                   ],
                 ),
               ),
             ),
-            
+
             // Dial Pad
             Expanded(
               flex: 5,
@@ -352,7 +360,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                 ),
               ),
             ),
-            
+
             // Action Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -381,31 +389,38 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(35),
                             border: Border.all(
-                              color: _phoneNumber.isNotEmpty ? Colors.white24 : Colors.white12,
+                              color: _phoneNumber.isNotEmpty
+                                  ? Colors.white24
+                                  : Colors.white12,
                               width: 1,
                             ),
                           ),
                           child: Icon(
                             Icons.backspace_outlined,
-                            color: _phoneNumber.isNotEmpty ? Colors.white70 : Colors.white24,
+                            color: _phoneNumber.isNotEmpty
+                                ? Colors.white70
+                                : Colors.white24,
                             size: 28,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  
+
                   // Call Button
                   Material(
                     color: _phoneNumber.isNotEmpty && _isServiceRunning
                         ? const Color(0xFF00C853)
                         : Colors.grey.shade700,
                     borderRadius: BorderRadius.circular(40),
-                    elevation: _phoneNumber.isNotEmpty && _isServiceRunning ? 8 : 0,
+                    elevation:
+                        _phoneNumber.isNotEmpty && _isServiceRunning ? 8 : 0,
                     shadowColor: const Color(0xFF00C853).withOpacity(0.5),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(40),
-                      onTap: _phoneNumber.isNotEmpty && _isServiceRunning ? _makeCall : null,
+                      onTap: _phoneNumber.isNotEmpty && _isServiceRunning
+                          ? _makeCall
+                          : null,
                       child: Container(
                         width: 80,
                         height: 80,
@@ -420,7 +435,7 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                       ),
                     ),
                   ),
-                  
+
                   // Menu Button
                   Material(
                     color: const Color(0xFF1D1E33),
@@ -432,7 +447,8 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
                           context: context,
                           backgroundColor: const Color(0xFF1D1E33),
                           shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(20)),
                           ),
                           builder: (context) => _buildMenuSheet(),
                         );
@@ -542,7 +558,8 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
         children: [
           ListTile(
             leading: const Icon(Icons.settings, color: Colors.white),
-            title: const Text('SIP Registration', style: TextStyle(color: Colors.white)),
+            title: const Text('SIP Registration',
+                style: TextStyle(color: Colors.white)),
             onTap: () {
               Navigator.pop(context);
               _openRegistrationScreen();
@@ -550,9 +567,12 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
           ),
           ListTile(
             leading: const Icon(Icons.info, color: Colors.white),
-            title: const Text('Service Status', style: TextStyle(color: Colors.white)),
+            title: const Text('Service Status',
+                style: TextStyle(color: Colors.white)),
             subtitle: Text(
-              _isServiceRunning ? 'Service is running' : 'Service is not running',
+              _isServiceRunning
+                  ? 'Service is running'
+                  : 'Service is not running',
               style: TextStyle(
                 color: _isServiceRunning ? Colors.green : Colors.red,
               ),
@@ -560,7 +580,9 @@ class _DialPadMainScreenState extends State<DialPadMainScreen> with TickerProvid
             onTap: () {
               Navigator.pop(context);
               _showSnackBar(
-                _isServiceRunning ? 'Service is running' : 'Service is not running',
+                _isServiceRunning
+                    ? 'Service is running'
+                    : 'Service is not running',
                 _isServiceRunning ? Colors.green : Colors.red,
               );
             },

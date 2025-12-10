@@ -23,7 +23,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
     private Activity activity;
 
     public MethodChannelHandler(Activity activity,
-                                EventChannelHelper loginEventListener, EventChannelHelper callEventListener) {
+            EventChannelHelper loginEventListener, EventChannelHelper callEventListener) {
 
         this.loginEventListener = loginEventListener;
         this.callEventListener = callEventListener;
@@ -63,7 +63,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
             case "call":
                 Map callData = (Map) call.arguments;
                 String number = (String) callData.get("number");
-                
+
                 // Check if background service is running
                 LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
                 if (service != null) {
@@ -79,7 +79,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
             case "transfer":
                 Map destinationMap = (Map) call.arguments;
                 String destination = (String) destinationMap.get("destination");
-               boolean isTransferred =  linPhoneHelper.callForward(destination);
+                boolean isTransferred = linPhoneHelper.callForward(destination);
                 result.success(isTransferred);
                 break;
             case "toggle_speaker":
@@ -92,7 +92,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
                 break;
             case "request_permissions":
                 try {
-                    String[] permissionArrays = new String[]{
+                    String[] permissionArrays = new String[] {
                             Manifest.permission.CAMERA,
                             Manifest.permission.USE_SIP,
                             Manifest.permission.RECORD_AUDIO,
@@ -150,7 +150,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
                 break;
         }
     }
-    
+
     private boolean hasActiveCall() {
         LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
         if (service != null) {
@@ -161,17 +161,17 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
         }
         return false;
     }
-    
+
     private void openCallScreen() {
         LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
         if (service != null && hasActiveCall()) {
             org.linphone.core.Core core = service.getCore();
             if (core != null && core.getCurrentCall() != null) {
                 org.linphone.core.Call call = core.getCurrentCall();
-                
+
                 String callerName = "Unknown";
                 String callerNumber = "Unknown";
-                
+
                 if (call.getRemoteAddress() != null) {
                     if (call.getRemoteAddress().getDisplayName() != null) {
                         callerName = call.getRemoteAddress().getDisplayName();
@@ -180,7 +180,7 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
                         callerNumber = call.getRemoteAddress().getUsername();
                     }
                 }
-                
+
                 android.content.Intent intent = new android.content.Intent(activity, CallActivity.class);
                 intent.putExtra("caller_name", callerName);
                 intent.putExtra("caller_number", callerNumber);
@@ -189,35 +189,35 @@ public class MethodChannelHandler extends FlutterActivity implements MethodChann
             }
         }
     }
-    
+
     private void startBackgroundService(String username, String password, String domain) {
         // Check for RECORD_AUDIO permission before starting the service
-        if (androidx.core.content.ContextCompat.checkSelfPermission(activity, 
+        if (androidx.core.content.ContextCompat.checkSelfPermission(activity,
                 android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            android.util.Log.e("LinphonePlugin", "RECORD_AUDIO permission not granted! Cannot start background service.");
+            android.util.Log.e("LinphonePlugin",
+                    "RECORD_AUDIO permission not granted! Cannot start background service.");
             throw new SecurityException("RECORD_AUDIO permission is required to start the background service");
         }
-        
+
         android.content.Intent intent = new android.content.Intent(activity, LinphoneBackgroundService.class);
         intent.setAction("REGISTER");
         intent.putExtra("username", username);
         intent.putExtra("password", password);
         intent.putExtra("domain", domain);
-        
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             activity.startForegroundService(intent);
         } else {
             activity.startService(intent);
         }
     }
-    
+
     private void stopBackgroundService() {
         android.content.Intent intent = new android.content.Intent(activity, LinphoneBackgroundService.class);
         activity.stopService(intent);
     }
-    
+
     private boolean isServiceRunning() {
         return LinphoneBackgroundService.getInstance() != null;
     }
 }
-

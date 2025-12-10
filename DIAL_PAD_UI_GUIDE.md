@@ -3,6 +3,7 @@
 ## Main Screen Updates
 
 ### New Floating Action Button (FAB)
+
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -17,6 +18,7 @@
 ```
 
 ### New Dial Pad Button
+
 ```
 ╔═══════════════════════════════════════╗
 ║  ┌─────────────────────────────────┐  ║
@@ -41,6 +43,7 @@
 ## Dial Pad Screen
 
 ### Full Screen View
+
 ```
 ╔═══════════════════════════════════════╗
 ║  [←]  Dial Pad                        ║ ← AppBar
@@ -71,6 +74,7 @@
 ```
 
 ### Color Scheme
+
 ```
 Background:     #0A0E21 (Dark Navy)
 Buttons:        #1D1E33 (Lighter Navy)
@@ -85,6 +89,7 @@ Borders:        #FFFFFF1F (White 12%)
 ## Button States
 
 ### Digit Button (Normal)
+
 ```
 ╔═════════════╗
 ║      2      ║  ← White text, size 28
@@ -95,6 +100,7 @@ Borders:        #FFFFFF1F (White 12%)
 ```
 
 ### Digit Button (Pressed)
+
 ```
 ╔═════════════╗
 ║      2      ║  ← Scales up 5%
@@ -105,6 +111,7 @@ Borders:        #FFFFFF1F (White 12%)
 ```
 
 ### Call Button (Disabled - No Number)
+
 ```
   ╔═══════╗
   ║       ║
@@ -114,6 +121,7 @@ Borders:        #FFFFFF1F (White 12%)
 ```
 
 ### Call Button (Active - Number Entered)
+
 ```
   ╔═══════╗
   ║       ║
@@ -128,6 +136,7 @@ Borders:        #FFFFFF1F (White 12%)
 ## Animations
 
 ### 1. Number Display Pulse
+
 ```
 Number Entered:
 1.00x → 1.05x → 1.00x
@@ -137,6 +146,7 @@ Effect: Number "pops" when digit added
 ```
 
 ### 2. Delete Button Press
+
 ```
 Delete Pressed:
 1.00x → 0.80x → 1.00x
@@ -146,6 +156,7 @@ Effect: Button "squishes" on tap
 ```
 
 ### 3. Button Splash
+
 ```
 Any Button Pressed:
 - Ripple effect from tap point
@@ -154,6 +165,7 @@ Any Button Pressed:
 ```
 
 ### 4. Call Button Elevation
+
 ```
 Disabled → Enabled:
 - Shadow appears
@@ -166,23 +178,27 @@ Disabled → Enabled:
 ## Interactions
 
 ### Digit Buttons
+
 ```
 Tap → Add digit → Pulse animation → Haptic (light)
 ```
 
 ### Delete Button
+
 ```
 Tap → Delete last → Scale animation → Haptic (medium)
 Long Press → Clear all → Scale animation → Haptic (medium)
 ```
 
 ### Call Button
+
 ```
 Disabled: No interaction
 Enabled: Tap → Navigate back → Make call → Haptic (heavy)
 ```
 
 ### Add Contact Button
+
 ```
 Tap → Show "Coming soon" snackbar → Haptic (light)
 ```
@@ -192,6 +208,7 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ## User Flow
 
 ### Happy Path
+
 ```
 1. User opens app
    ↓
@@ -216,6 +233,7 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ```
 
 ### Error Path
+
 ```
 1. User opens dial pad
    ↓
@@ -237,6 +255,7 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ## Responsive Design
 
 ### Phone Portrait (Most Common)
+
 ```
 - Dial pad: 75dp height per button
 - Spacing: 8dp between buttons
@@ -245,6 +264,7 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ```
 
 ### Phone Landscape
+
 ```
 - Adjusted spacing (automatic)
 - Scrollable if needed
@@ -252,6 +272,7 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ```
 
 ### Tablet
+
 ```
 - Centered layout
 - Max width: 400dp
@@ -263,21 +284,25 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ## Accessibility
 
 ### Touch Targets
+
 - All buttons: Minimum 48x48dp
 - Recommended: 60-75dp for dial buttons
 - Call button: 80dp for easy tapping
 
 ### Visual Feedback
+
 - Clear pressed states
 - Color contrast ratio > 4.5:1
 - Large text (28sp for numbers)
 
 ### Haptic Feedback
+
 - Light: Digit press
 - Medium: Delete/Clear
 - Heavy: Call action
 
 ### Screen Reader Support
+
 - All buttons labeled
 - State announcements
 - Navigation hints
@@ -287,12 +312,14 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ## Performance
 
 ### Target Metrics
+
 - Animation FPS: 60
 - Button response: <100ms
 - Screen load: <200ms
 - Memory: <50MB additional
 
 ### Optimizations
+
 - Hardware acceleration enabled
 - No rebuilds on animation
 - Cached button widgets
@@ -303,12 +330,14 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ## Dark Theme Details
 
 ### Why Dark?
+
 - Reduces eye strain
 - Better for night use
 - Professional appearance
 - Common in VoIP apps
 
 ### Color Psychology
+
 - **Dark Blue (#0A0E21)**: Trust, stability
 - **Green (#00C853)**: Action, success, go
 - **White**: Clarity, cleanliness
@@ -319,6 +348,7 @@ Tap → Show "Coming soon" snackbar → Haptic (light)
 ## Comparison
 
 ### Before (Old UI)
+
 ```
 TextField: Enter Number
 [   Call Button   ]
@@ -331,6 +361,7 @@ Problems:
 ```
 
 ### After (New Dial Pad)
+
 ```
      555-1234
 ┌──────────────┐
@@ -354,6 +385,7 @@ Benefits:
 ## Technical Specs
 
 ### Widget Tree
+
 ```
 DialPadScreen (StatefulWidget)
 ├── Scaffold
@@ -370,12 +402,13 @@ DialPadScreen (StatefulWidget)
 ```
 
 ### State Management
+
 ```dart
 class _DialPadScreenState {
   String _phoneNumber = '';
   AnimationController _pulseController;
   AnimationController _deleteController;
-  
+
   // Methods:
   - _onDigitPressed()
   - _onDeletePressed()
@@ -385,6 +418,7 @@ class _DialPadScreenState {
 ```
 
 ### Animations
+
 ```dart
 // Pulse Animation
 _pulseController = AnimationController(

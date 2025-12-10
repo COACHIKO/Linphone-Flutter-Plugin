@@ -7,6 +7,7 @@ Previously, calls didn't work from the Flutter app because only the background s
 ## 🚀 How to Use (3 Easy Steps)
 
 ### Step 1: Grant Permissions (First Time Only)
+
 ```
 1. Open the app
 2. Tap "1. Grant All Permissions" button
@@ -14,12 +15,13 @@ Previously, calls didn't work from the Flutter app because only the background s
 ```
 
 ### Step 2: Start Background Service
+
 ```
 1. Enter your SIP credentials:
    - Username: your_username
    - Password: your_password
    - Domain: your_sip_domain.com
-   
+
 2. Tap "2. Start Service" button
 3. Wait for "Registered as..." in notification
 ```
@@ -27,6 +29,7 @@ Previously, calls didn't work from the Flutter app because only the background s
 ### Step 3: Make Calls! 📞
 
 #### Option A: Beautiful Dial Pad (Recommended)
+
 ```
 1. Tap the green "Open Dial Pad" button
 2. Enter phone number using the keypad
@@ -35,6 +38,7 @@ Previously, calls didn't work from the Flutter app because only the background s
 ```
 
 #### Option B: Quick Call
+
 ```
 1. Enter number in the "Number" text field
 2. Tap "Call" button
@@ -43,6 +47,7 @@ Previously, calls didn't work from the Flutter app because only the background s
 ## 🎨 Dial Pad Features
 
 ### Beautiful UI
+
 - ✨ Modern dark theme with gradient effects
 - 📱 Traditional phone keypad layout
 - 💫 Smooth animations on every tap
@@ -50,6 +55,7 @@ Previously, calls didn't work from the Flutter app because only the background s
 - ✅ Clear visual feedback
 
 ### Smart Features
+
 - **Backspace**: Tap to delete last digit
 - **Clear All**: Long press backspace
 - **Letters**: Shows ABC, DEF, etc. on buttons (like real phones)
@@ -98,16 +104,20 @@ Previously, calls didn't work from the Flutter app because only the background s
 ## ⚠️ Troubleshooting
 
 ### "Background service not running!"
+
 **Solution:** Tap "2. Start Service" button first
 
 ### "Call failed"
+
 **Possible causes:**
+
 - Service not registered (check notification)
 - Invalid number format
 - Network issues
 - SIP credentials incorrect
 
 **Fix:**
+
 1. Stop service
 2. Re-enter credentials
 3. Start service
@@ -115,10 +125,13 @@ Previously, calls didn't work from the Flutter app because only the background s
 5. Try call again
 
 ### Dial Pad won't open
+
 **Solution:** Make sure you're on the main screen
 
 ### No audio during call
+
 **Check:**
+
 - Microphone permission granted
 - Volume is up
 - Try speaker button
@@ -173,11 +186,13 @@ bool isRunning = await _linphoneSdkPlugin.isServiceRunning();
 ## 🎯 What's Different Now?
 
 ### Before ❌
+
 - Calls didn't work from Flutter app
 - Only background service had registration
 - Basic UI with no dial pad
 
 ### After ✅
+
 - Calls work perfectly from Flutter app
 - Uses background service's registration
 - Beautiful dial pad with animations

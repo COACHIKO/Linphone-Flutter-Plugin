@@ -814,7 +814,7 @@ public class LinphoneBackgroundService extends Service {
      */
     public static boolean makeCall(String number) {
         Log.i(TAG, "makeCall: Initiating outgoing call to " + number);
-        
+
         if (core == null) {
             Log.e(TAG, "makeCall: Core is null, cannot make call");
             return false;
@@ -858,10 +858,10 @@ public class LinphoneBackgroundService extends Service {
 
             // Create call params (use default params)
             org.linphone.core.CallParams params = core.createCallParams(null);
-            
+
             // Initiate the call
             Call call = core.inviteAddressWithParams(remoteAddress, params);
-            
+
             if (call != null) {
                 Log.d(TAG, "✓ Call initiated successfully to: " + remoteAddress.asStringUriOnly());
                 return true;

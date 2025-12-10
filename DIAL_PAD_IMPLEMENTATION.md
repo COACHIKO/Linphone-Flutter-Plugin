@@ -7,18 +7,22 @@ This implementation fixes the call initiation issue where calls couldn't be made
 ## What Was Fixed
 
 ### Problem
+
 - Calls weren't working from the Flutter app
 - Only the background service had SIP registration
 - No proper dial pad UI for making calls
 
 ### Solution
+
 1. **Added `makeCall()` method to `LinphoneBackgroundService.java`**
+
    - Static method accessible from anywhere
    - Uses the background service's Core instance
    - Handles SIP address formatting automatically
    - Includes proper error handling and logging
 
 2. **Updated `MethodChannelHandler.java`**
+
    - Routes calls through background service when available
    - Falls back to old method if service not running
    - Provides feedback on call success/failure
@@ -34,7 +38,9 @@ This implementation fixes the call initiation issue where calls couldn't be made
 ## How to Use
 
 ### Setup (Do Once)
+
 1. **Grant Permissions**
+
    ```dart
    // Tap "1. Grant All Permissions" button in app
    await _linphoneSdkPlugin.requestPermissions();
@@ -53,18 +59,22 @@ This implementation fixes the call initiation issue where calls couldn't be made
 ### Making Calls
 
 #### Method 1: Dial Pad (Recommended)
+
 1. Tap the green "Open Dial Pad" button or FAB
 2. Enter phone number using the keypad
 3. Press the green call button
 
 #### Method 2: Quick Call
+
 1. Enter number in the text field
 2. Tap "Call" button
 
 ## Features
 
 ### Dial Pad Screen
+
 - **Beautiful UI/UX**
+
   - Dark theme with gradient accents
   - Smooth animations
   - Haptic feedback on every tap
@@ -78,12 +88,14 @@ This implementation fixes the call initiation issue where calls couldn't be made
   - Proper error handling and user feedback
 
 ### Call Flow
+
 ```
-User → Dial Pad → makeCall() → Check Service Running → 
+User → Dial Pad → makeCall() → Check Service Running →
 Background Service makeCall() → Linphone Core → SIP Call
 ```
 
 ### Error Handling
+
 - **Service not running**: Shows warning to start service
 - **Call failed**: Shows error message with details
 - **Invalid number**: Prevents call attempt
@@ -94,6 +106,7 @@ Background Service makeCall() → Linphone Core → SIP Call
 ### Android (Java)
 
 #### LinphoneBackgroundService.java
+
 ```java
 public static boolean makeCall(String number) {
     // 1. Check core availability
@@ -105,6 +118,7 @@ public static boolean makeCall(String number) {
 ```
 
 **Key Features:**
+
 - Static method for easy access
 - Automatic SIP URI formatting
 - Handles both "sip:xxx" and plain numbers
@@ -112,6 +126,7 @@ public static boolean makeCall(String number) {
 - Thread-safe operation
 
 #### MethodChannelHandler.java
+
 ```java
 case "call":
     LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
@@ -128,15 +143,18 @@ case "call":
 ### Flutter (Dart)
 
 #### linphoneflutterplugin.dart
+
 ```dart
 Future<void> call({required String number}) async {
   var data = {"number": number};
   return await _channel.invokeMethod("call", data);
 }
 ```
+
 No changes needed - automatically uses new implementation!
 
 #### dial_pad_screen.dart
+
 - Custom dial pad widget
 - Animation controllers for smooth UX
 - Haptic feedback integration
@@ -145,11 +163,12 @@ No changes needed - automatically uses new implementation!
 ## Call States
 
 The existing call state listener continues to work:
+
 ```dart
 StreamBuilder<CallState>(
   stream: _linphoneSdkPlugin.addCallStateListener(),
   builder: (context, snapshot) {
-    // Handle: OutgoingInit, OutgoingProgress, 
+    // Handle: OutgoingInit, OutgoingProgress,
     //         OutgoingRinging, Connected, etc.
   },
 )
@@ -180,19 +199,23 @@ StreamBuilder<CallState>(
 ## Troubleshooting
 
 ### Calls Not Working
+
 1. **Check service is running**
+
    ```dart
    bool isRunning = await _linphoneSdkPlugin.isServiceRunning();
    print('Service running: $isRunning');
    ```
 
 2. **Check permissions granted**
+
    - RECORD_AUDIO
    - USE_SIP
    - CAMERA
    - All network permissions
 
 3. **Check registration state**
+
    - Look at service notification
    - Should show "Registered as username@domain"
 
@@ -202,6 +225,7 @@ StreamBuilder<CallState>(
    ```
 
 ### Dial Pad Not Opening
+
 - Verify import statement in main.dart
 - Check navigation key is properly set
 - Ensure no navigation guards blocking
@@ -220,10 +244,12 @@ StreamBuilder<CallState>(
 ## Files Modified
 
 ### Android
+
 - `LinphoneBackgroundService.java` - Added `makeCall()` method
 - `MethodChannelHandler.java` - Updated call routing logic
 
 ### Flutter
+
 - `example/lib/dial_pad_screen.dart` - New dial pad UI
 - `example/lib/main.dart` - Integration and navigation
 

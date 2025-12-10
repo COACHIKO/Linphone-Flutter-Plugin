@@ -13,11 +13,11 @@ class SipRegistrationScreen extends StatefulWidget {
 
 class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
   final _linphoneSdkPlugin = LinphoneFlutterPlugin();
-  
+
   final _userController = TextEditingController();
   final _passController = TextEditingController();
   final _domainController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isRegistered = false;
   String _statusMessage = '';
@@ -91,15 +91,17 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
   Future<void> _requestPermissions() async {
     try {
       await _linphoneSdkPlugin.requestPermissions();
-      _showSnackBar('✅ Permissions requested! Please allow all permissions.', Colors.green);
+      _showSnackBar('✅ Permissions requested! Please allow all permissions.',
+          Colors.green);
     } catch (e) {
-      _showSnackBar('📱 Please allow ALL permissions when prompted!', Colors.blue);
+      _showSnackBar(
+          '📱 Please allow ALL permissions when prompted!', Colors.blue);
     }
   }
 
   Future<void> _startService() async {
-    if (_userController.text.isEmpty || 
-        _passController.text.isEmpty || 
+    if (_userController.text.isEmpty ||
+        _passController.text.isEmpty ||
         _domainController.text.isEmpty) {
       _showSnackBar('⚠️ Please fill in all fields', Colors.orange);
       return;
@@ -114,13 +116,13 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
         domain: _domainController.text,
         password: _passController.text,
       );
-      
+
       _showSnackBar('✅ Service started successfully', Colors.green);
-      
+
       // Wait a bit then check status
       await Future.delayed(const Duration(seconds: 2));
       await _checkServiceStatus();
-      
+
       if (_isRegistered) {
         // Navigate back to dial pad
         if (mounted) Navigator.pop(context, true);
@@ -134,7 +136,7 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
 
   Future<void> _stopService() async {
     setState(() => _isLoading = true);
-    
+
     try {
       await _linphoneSdkPlugin.stopBackgroundService();
       setState(() {
@@ -222,7 +224,7 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Permission Button
               ElevatedButton.icon(
                 onPressed: _isLoading ? null : _requestPermissions,
@@ -238,7 +240,7 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Username Field
               _buildTextField(
                 controller: _userController,
@@ -247,7 +249,7 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
                 enabled: !_isLoading && !_isRegistered,
               ),
               const SizedBox(height: 16),
-              
+
               // Password Field
               _buildTextField(
                 controller: _passController,
@@ -257,7 +259,7 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
                 enabled: !_isLoading && !_isRegistered,
               ),
               const SizedBox(height: 16),
-              
+
               // Domain Field
               _buildTextField(
                 controller: _domainController,
@@ -266,12 +268,12 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
                 enabled: !_isLoading && !_isRegistered,
               ),
               const SizedBox(height: 32),
-              
+
               // Action Buttons
               if (!_isRegistered)
                 ElevatedButton.icon(
                   onPressed: _isLoading ? null : _startService,
-                  icon: _isLoading 
+                  icon: _isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
@@ -323,9 +325,9 @@ class _SipRegistrationScreenState extends State<SipRegistrationScreen> {
                     ),
                   ],
                 ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Info Text
               Container(
                 padding: const EdgeInsets.all(16),

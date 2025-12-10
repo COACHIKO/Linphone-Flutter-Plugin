@@ -39,7 +39,6 @@ public class LinPhoneHelper {
     private EventChannelHelper loginListener;
     private EventChannelHelper callEventListener;
 
-
     public LinPhoneHelper(Activity context, EventChannelHelper loginListener, EventChannelHelper callEventListener) {
         this.context = context;
         this.loginListener = loginListener;
@@ -74,7 +73,8 @@ public class LinPhoneHelper {
         core.addListener(coreListener);
         account.addListener(new AccountListener() {
             @Override
-            public void onRegistrationStateChanged(@NonNull Account account, RegistrationState registrationState, @NonNull String s) {
+            public void onRegistrationStateChanged(@NonNull Account account, RegistrationState registrationState,
+                    @NonNull String s) {
                 if (registrationState == RegistrationState.Ok) {
                     loginListener.success("Login success (2)");
                 } else if (registrationState == RegistrationState.Failed) {
@@ -86,37 +86,45 @@ public class LinPhoneHelper {
     }
 
     public void call(String number) {
-        if (core == null) return;
+        if (core == null)
+            return;
         String formattedNumber = String.format("sip:%s@%s", number, domain);
         Address remoteAddress = Factory.instance().createAddress(formattedNumber);
-        if (remoteAddress == null) return;
+        if (remoteAddress == null)
+            return;
         CallParams params = core.createCallParams(null);
-        if (params == null) return;
+        if (params == null)
+            return;
 
         // We can now configure it
         // Here we ask for no encryption but we could ask for ZRTP/SRTP/DTLS
         params.setMediaEncryption(MediaEncryption.SRTP);
         // If we wanted to start the call with video directly
-        //params.enableVideo(true)
+        // params.enableVideo(true)
         params.enableAudio(true);
         // Finally we start the call
         core.inviteAddressWithParams(remoteAddress, params);
     }
 
     public boolean callForward(String destination) {
-        if (core == null) return false;
-        if (core.getCallsNb() == 0) return false;
+        if (core == null)
+            return false;
+        if (core.getCallsNb() == 0)
+            return false;
         Call currentCall = null;
-        if (core.getCurrentCall() == null) return false;
+        if (core.getCurrentCall() == null)
+            return false;
         currentCall = core.getCurrentCall();
         Address address = core.interpretUrl(destination);
-        if (address == null) return false;
+        if (address == null)
+            return false;
         currentCall.transferTo(address);
         return true;
     }
 
     public String callLogs() {
-        if (core == null) return null;
+        if (core == null)
+            return null;
         CallLog[] logs = core.getCallLogs();
         List<CallHistory> callHistoryList = new ArrayList<>();
         callHistoryList.clear();
@@ -134,22 +142,24 @@ public class LinPhoneHelper {
         return new Gson().toJson(list);
     }
 
-
     public void hangUp() {
-        if (core.getCallsNb() == 0) return;
+        if (core.getCallsNb() == 0)
+            return;
         Call call = null;
         if (core.getCurrentCall() != null) {
             call = core.getCurrentCall();
         } else {
             call = core.getCalls()[0];
         }
-        if (call == null) return;
+        if (call == null)
+            return;
         call.terminate();
         callEventListener.success("Released");
     }
 
     public boolean toggleMute() {
-        if (core == null) return false;
+        if (core == null)
+            return false;
         if (core.getCurrentCall() != null) {
             if (core.getCurrentCall().getMicrophoneMuted()) {
                 core.getCurrentCall().setMicrophoneMuted(false);
@@ -169,7 +179,7 @@ public class LinPhoneHelper {
             Log.e(TAG, "toggleSpeaker: No active call");
             return;
         }
-        
+
         AudioDevice currentAudioDevice = currentCall.getOutputAudioDevice();
         boolean speakerEnabled = currentAudioDevice.getType() == AudioDevice.Type.Speaker;
 
@@ -194,33 +204,43 @@ public class LinPhoneHelper {
     }
 
     public void answerCall() {
-        if (core.getCallsNb() == 0) return;
+        if (core.getCallsNb() == 0)
+            return;
         Call call = core.getCurrentCall();
-        if (call == null) call = core.getCalls()[0];
-        if (call == null) return;
+        if (call == null)
+            call = core.getCalls()[0];
+        if (call == null)
+            return;
         CallParams params = core.createCallParams(call);
-        if (params == null) return;
+        if (params == null)
+            return;
         call.acceptWithParams(params);
         callEventListener.success("CallAnswered");
     }
 
     public void rejectCall() {
-        if (core.getCallsNb() == 0) return;
+        if (core.getCallsNb() == 0)
+            return;
         Call call = core.getCurrentCall();
-        if (call == null) call = core.getCalls()[0];
-        if (call == null) return;
+        if (call == null)
+            call = core.getCalls()[0];
+        if (call == null)
+            return;
         call.terminate();
         callEventListener.success("CallRejected");
     }
+
     public void removeLoginListener() {
-        if (core == null) return;
+        if (core == null)
+            return;
         core.removeListener(coreListener);
         core = null;
         loginListener.handler = null;
     }
 
     public void removeCallListener() {
-        if (core == null) return;
+        if (core == null)
+            return;
         core.removeListener(coreListener);
         core = null;
         callEventListener.handler = null;
@@ -228,13 +248,15 @@ public class LinPhoneHelper {
 
     CoreListener coreListener = new CoreListenerStub() {
         @Override
-        public void onAccountRegistrationStateChanged(@NonNull Core core, @NonNull Account account, RegistrationState state, @NonNull String message) {
+        public void onAccountRegistrationStateChanged(@NonNull Core core, @NonNull Account account,
+                RegistrationState state, @NonNull String message) {
             loginListener.success(state.name());
         }
 
         @Override
-        public void onCallStateChanged(@NonNull Core core, @NonNull Call call, Call.State state, @NonNull String message) {
-            //super.onCallStateChanged(core, call, state, message);
+        public void onCallStateChanged(@NonNull Core core, @NonNull Call call, Call.State state,
+                @NonNull String message) {
+            // super.onCallStateChanged(core, call, state, message);
 
             switch (state) {
                 case IncomingReceived:
