@@ -333,7 +333,8 @@ public class LinphoneBackgroundService extends Service {
 
     /**
      * Production-grade method to accept call and launch UI in all app states.
-     * Handles foreground, background, and terminated states with proper activity management.
+     * Handles foreground, background, and terminated states with proper activity
+     * management.
      * 
      * Strategy:
      * 1. Close IncomingCallActivity if open
@@ -344,7 +345,7 @@ public class LinphoneBackgroundService extends Service {
      */
     private void acceptCallAndLaunchUI() {
         Log.i(TAG, "acceptCallAndLaunchUI: Starting production-grade call acceptance flow");
-        
+
         // Step 1: Find the call to answer
         Call call = currentIncomingCall;
         if (call == null && core != null && core.getCallsNb() > 0) {
@@ -384,12 +385,12 @@ public class LinphoneBackgroundService extends Service {
             callActivityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             callActivityIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             callActivityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            
+
             // Add caller information
             callActivityIntent.putExtra("caller_name", callerName);
             callActivityIntent.putExtra("caller_number", callerNumber);
             callActivityIntent.putExtra("auto_accepted", true); // Mark as auto-accepted from notification
-            
+
             // Launch the activity
             Log.d(TAG, "🚀 Launching CallActivity with flags: NEW_TASK | CLEAR_TOP | SINGLE_TOP");
             startActivity(callActivityIntent);
@@ -400,10 +401,10 @@ public class LinphoneBackgroundService extends Service {
             Log.d(TAG, "✓ Incoming call notification dismissed");
 
             Log.i(TAG, "✓✓✓ Call acceptance flow completed successfully ✓✓✓");
-            
+
         } catch (Exception e) {
             Log.e(TAG, "❌ Error in acceptCallAndLaunchUI", e);
-            
+
             // Fallback: Try to at least accept the call even if UI launch fails
             try {
                 if (call != null && call.getState() == Call.State.IncomingReceived) {
@@ -754,7 +755,8 @@ public class LinphoneBackgroundService extends Service {
      * This avoids restarting the service and properly coordinates with
      * IncomingCallActivity.
      * 
-     * Production-grade implementation that ensures CallActivity opens in all states:
+     * Production-grade implementation that ensures CallActivity opens in all
+     * states:
      * - Foreground: Direct activity launch
      * - Background: Activity launch with proper flags
      * - Terminated: Service resurrects and launches activity
@@ -930,7 +932,7 @@ public class LinphoneBackgroundService extends Service {
         acceptActivityIntent.putExtra("caller_name", call.getRemoteAddress().getDisplayName());
         acceptActivityIntent.putExtra("caller_number", call.getRemoteAddress().getUsername());
         acceptActivityIntent.putExtra("accept_on_create", true); // Signal to accept immediately
-        
+
         PendingIntent acceptPendingIntent = PendingIntent.getActivity(
                 this,
                 1,

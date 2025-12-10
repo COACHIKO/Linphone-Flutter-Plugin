@@ -7,7 +7,8 @@ import android.os.Build;
 import android.util.Log;
 
 /**
- * Production-grade BroadcastReceiver to handle incoming call notification actions.
+ * Production-grade BroadcastReceiver to handle incoming call notification
+ * actions.
  * Handles Accept/Decline without restarting LinphoneBackgroundService.
  * 
  * Features:
@@ -40,21 +41,21 @@ public class CallActionReceiver extends BroadcastReceiver {
      */
     private void handleAnswerCall(Context context) {
         Log.i(TAG, "🎯 handleAnswerCall: ULTIMATE FIX approach");
-        
+
         // Check service state first
         LinphoneBackgroundService service = LinphoneBackgroundService.getInstance();
-        
+
         if (service != null) {
             Log.d(TAG, "✓ Service instance EXISTS - calling answerCallFromNotification()");
             LinphoneBackgroundService.answerCallFromNotification();
         } else {
             Log.w(TAG, "⚠️ Service instance is NULL");
-            
+
             // Start/resurrect the service with answer action
             try {
                 Intent serviceIntent = new Intent(context, LinphoneBackgroundService.class);
                 serviceIntent.setAction("ANSWER_CALL_FROM_NOTIFICATION");
-                
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     Log.d(TAG, "Starting foreground service (Android O+)");
                     context.startForegroundService(serviceIntent);
@@ -62,9 +63,9 @@ public class CallActionReceiver extends BroadcastReceiver {
                     Log.d(TAG, "Starting service (pre-Android O)");
                     context.startService(serviceIntent);
                 }
-                
+
                 Log.d(TAG, "✓ Service start/resurrection requested via startService");
-                
+
             } catch (Exception e) {
                 Log.e(TAG, "❌ Failed to start service", e);
                 e.printStackTrace();

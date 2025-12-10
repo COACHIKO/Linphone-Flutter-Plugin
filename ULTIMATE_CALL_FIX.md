@@ -1,7 +1,9 @@
 # ULTIMATE FIX: Direct CallActivity Launch from Notification
 
 ## The Real Problem
+
 The previous approach relied on:
+
 - BroadcastReceiver → Service → CallActivity launch
 - This chain breaks when service is null (terminated state)
 - Even with resurrection, timing issues caused failures
@@ -9,6 +11,7 @@ The previous approach relied on:
 ## The Ultimate Solution
 
 ### Direct Activity Launch
+
 ```
 User presses Accept button
 ↓
@@ -31,6 +34,7 @@ User sees call screen immediately ✓✓✓
 ### Code Changes
 
 #### LinphoneBackgroundService.java
+
 ```java
 // Accept button now launches CallActivity DIRECTLY
 Intent acceptActivityIntent = new Intent(this, CallActivity.class);
@@ -40,12 +44,13 @@ acceptActivityIntent.putExtra("caller_number", callerNumber);
 acceptActivityIntent.putExtra("accept_on_create", true); // Magic flag
 
 PendingIntent acceptPendingIntent = PendingIntent.getActivity(
-    this, 1, acceptActivityIntent, 
+    this, 1, acceptActivityIntent,
     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
 );
 ```
 
 #### CallActivity.java (onCreate)
+
 ```java
 // Auto-accept if launched from notification
 boolean acceptOnCreate = getIntent().getBooleanExtra("accept_on_create", false);
@@ -66,12 +71,12 @@ if (acceptOnCreate) {
 
 ### Test Scenarios
 
-| Scenario | Result |
-|----------|--------|
-| Foreground + Accept | ✓ CallActivity opens instantly |
-| Background + Accept | ✓ CallActivity opens, app to foreground |
+| Scenario            | Result                                         |
+| ------------------- | ---------------------------------------------- |
+| Foreground + Accept | ✓ CallActivity opens instantly                 |
+| Background + Accept | ✓ CallActivity opens, app to foreground        |
 | Terminated + Accept | ✓ CallActivity opens, Core already initialized |
-| No service + Accept | ✓ CallActivity opens, accesses Core directly |
+| No service + Accept | ✓ CallActivity opens, accesses Core directly   |
 
 ### Why Previous Approaches Failed
 
@@ -89,6 +94,7 @@ if (acceptOnCreate) {
 ### Fallback Handling
 
 Even if Core is null when CallActivity opens:
+
 - Activity still appears (user sees UI)
 - Can show "Connecting..." message
 - Core usually initializes within 100-200ms
