@@ -21,6 +21,9 @@ import org.linphone.core.CallParams;
 import org.linphone.core.Core;
 import org.linphone.core.CoreListenerStub;
 
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+
 public class IncomingCallActivity extends Activity {
     private static final String TAG = "IncomingCallActivity";
     
@@ -36,6 +39,14 @@ public class IncomingCallActivity extends Activity {
             if (state == Call.State.End || state == Call.State.Released || state == Call.State.Error) {
                 finish();
             }
+        }
+    };
+    
+    private BroadcastReceiver closeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, android.content.Intent intent) {
+            android.util.Log.d(TAG, "Received broadcast to close IncomingCallActivity");
+            finish();
         }
     };
 
@@ -84,6 +95,15 @@ public class IncomingCallActivity extends Activity {
         
         // Start ringtone
         playRingtone();
+        
+        // Register broadcast receiver to close this activity when notification accept is pressed
+        IntentFilter filter = new IntentFilter("com.spagreen.linphonesdk.CLOSE_INCOMING_CALL");
+        if (Build.VERSION.SDK_INT >= 33) { // Android 13+
+            registerReceiver(closeReceiver, filter, 2); // RECEIVER_NOT_EXPORTED = 2
+        } else {
+            registerReceiver(closeReceiver, filter);
+        }
+        android.util.Log.d(TAG, "Registered broadcast receiver for closing activity");
         
         // Register listener
         Core core = LinphoneBackgroundService.getCore();
@@ -199,6 +219,14 @@ public class IncomingCallActivity extends Activity {
     @Override
     protected void onDestroy() {
         stopRingtone();
+        
+        // Unregister broadcast receiver
+        try {
+            unregisterReceiver(closeReceiver);
+            android.util.Log.d(TAG, "Unregistered broadcast receiver");
+        } catch (Exception e) {
+            android.util.Log.e(TAG, "Error unregistering broadcast receiver", e);
+        }
         
         Core core = LinphoneBackgroundService.getCore();
         if (core != null) {

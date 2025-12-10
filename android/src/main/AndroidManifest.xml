@@ -16,6 +16,16 @@
             android:enabled="false"
             android:stopWithTask="false" />
 
+        <!-- BroadcastReceiver for handling incoming call notification actions -->
+        <receiver
+            android:name=".CallActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.spagreen.linphonesdk.ACTION_ANSWER_CALL" />
+                <action android:name="com.spagreen.linphonesdk.ACTION_DECLINE_CALL" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
