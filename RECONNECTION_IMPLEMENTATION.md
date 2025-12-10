@@ -1,27 +1,32 @@
 # Auto-Reconnection Implementation Summary
 
 ## Overview
+
 Implemented a robust auto-reconnection mechanism to ensure SIP registration remains active through network disruptions and registration failures, achieving "200% reliability" as requested.
 
 ## Features
 
 ### 1. Network Monitoring
+
 - **CoreListener**: `onNetworkReachable()` callback monitors network state changes
 - **Automatic Response**: When network returns, immediately refreshes registration
 - **Visual Feedback**: Notification updates to "No network - Waiting..." during outages
 
 ### 2. Registration Failure Detection
+
 - **Enhanced State Handling**: `onAccountRegistrationStateChanged()` detects all failure scenarios
 - **Automatic Retry**: Triggers reconnection on `Failed` or `Cleared` states
 - **Success Reset**: Counter resets to 0 on successful registration for fast recovery
 
 ### 3. Exponential Backoff Algorithm
+
 - **Formula**: `delay = min(5000ms * 2^attempts, 60000ms)`
 - **Progression**: 5s → 10s → 20s → 40s → 60s (max)
 - **Infinite Retries**: No maximum attempt limit
 - **Smart Reset**: Counter resets on success, ensuring fast recovery after brief failures
 
 ### 4. Credential Persistence
+
 - **SharedPreferences**: Stores username, password, domain
 - **Auto-Login**: If account is lost, recreates from saved credentials
 - **Graceful Degradation**: Stops retrying if no credentials exist
@@ -31,6 +36,7 @@ Implemented a robust auto-reconnection mechanism to ensure SIP registration rema
 ### Key Methods
 
 #### `scheduleReconnect()`
+
 ```java
 private void scheduleReconnect() {
     cancelReconnectTimer();
@@ -39,11 +45,13 @@ private void scheduleReconnect() {
     reconnectAttempts++;
 }
 ```
+
 - Calculates exponential backoff delay
 - Schedules reconnection attempt
 - Increments attempt counter
 
 #### `cancelReconnectTimer()`
+
 ```java
 private void cancelReconnectTimer() {
     if (reconnectHandler != null && reconnectRunnable != null) {
@@ -51,10 +59,12 @@ private void cancelReconnectTimer() {
     }
 }
 ```
+
 - Stops any pending reconnection attempts
 - Called on successful registration or service destruction
 
 #### `attemptReregistration()`
+
 ```java
 private void attemptReregistration() {
     if (account != null) {
@@ -66,18 +76,20 @@ private void attemptReregistration() {
         String username = prefs.getString("flutter.username", null);
         String password = prefs.getString("flutter.password", null);
         String domain = prefs.getString("flutter.domain", null);
-        
+
         if (username != null && password != null && domain != null) {
             registerAccount(username, password, domain);
         }
     }
 }
 ```
+
 - Performs actual re-registration
 - Uses saved credentials if account is lost
 - Handles network unavailability gracefully
 
 ### Enhanced Registration State Handler
+
 ```java
 @Override
 public void onAccountRegistrationStateChanged(@NonNull Core core, @NonNull Account account,
@@ -89,7 +101,7 @@ public void onAccountRegistrationStateChanged(@NonNull Core core, @NonNull Accou
             cancelReconnectTimer();
             updateNotification("HATIF", "Ready for calls", true);
             break;
-            
+
         case Failed:
         case Cleared:
             Log.e(TAG, "✗ Registration failed: " + message);
@@ -101,11 +113,12 @@ public void onAccountRegistrationStateChanged(@NonNull Core core, @NonNull Accou
 ```
 
 ### Network State Listener
+
 ```java
 @Override
 public void onNetworkReachable(@NonNull Core core, boolean reachable) {
     isNetworkAvailable = reachable;
-    
+
     if (reachable) {
         Log.d(TAG, "✓ Network available");
         if (account != null && account.getState() != RegistrationState.Ok) {
@@ -129,18 +142,19 @@ private static final long RECONNECT_MAX_DELAY_MS = 60000;              // 60 sec
 
 ## Notification States
 
-| Scenario | Notification Text | Icon |
-|----------|------------------|------|
-| Registered Successfully | "Ready for calls" | Green checkmark |
-| Registration in Progress | "Registering..." | Info icon |
-| Registration Failed | "Registration failed - Retrying..." | Info icon |
-| Network Unavailable | "No network - Waiting..." | Info icon |
-| Reconnecting | "Reconnecting..." | Info icon |
-| No Credentials | "Registration failed - No credentials" | Info icon |
+| Scenario                 | Notification Text                      | Icon            |
+| ------------------------ | -------------------------------------- | --------------- |
+| Registered Successfully  | "Ready for calls"                      | Green checkmark |
+| Registration in Progress | "Registering..."                       | Info icon       |
+| Registration Failed      | "Registration failed - Retrying..."    | Info icon       |
+| Network Unavailable      | "No network - Waiting..."              | Info icon       |
+| Reconnecting             | "Reconnecting..."                      | Info icon       |
+| No Credentials           | "Registration failed - No credentials" | Info icon       |
 
 ## Logging
 
 All reconnection events are logged with emoji indicators:
+
 - ✓ Success events (green checkmark)
 - ✗ Failure events (red X)
 - ⏰ Scheduling events
@@ -153,6 +167,7 @@ All reconnection events are logged with emoji indicators:
 ## Testing Scenarios
 
 ### Scenario 1: Network Drops and Restores
+
 1. User is registered → Network drops
 2. `onNetworkReachable(false)` → Notification: "No network - Waiting..."
 3. Network restores → `onNetworkReachable(true)`
@@ -160,6 +175,7 @@ All reconnection events are logged with emoji indicators:
 5. Back to "Ready for calls" ✓
 
 ### Scenario 2: Registration Failure with Recovery
+
 1. Registration fails → `onAccountRegistrationStateChanged(Failed)`
 2. First retry in 5 seconds
 3. Still failing → 10 seconds delay
@@ -168,6 +184,7 @@ All reconnection events are logged with emoji indicators:
 6. Next failure → Fast retry (5 seconds again)
 
 ### Scenario 3: App Restart with Saved Credentials
+
 1. App starts → Service onCreate
 2. No active account exists
 3. `attemptReregistration()` reads SharedPreferences
@@ -176,6 +193,7 @@ All reconnection events are logged with emoji indicators:
 6. User is registered without manual login
 
 ### Scenario 4: Extended Network Outage
+
 1. Network down for 30 minutes
 2. Reconnection attempts continue with exponential backoff
 3. Delays increase to 60 seconds maximum
@@ -210,6 +228,7 @@ All reconnection events are logged with emoji indicators:
 ## Cleanup
 
 The `onDestroy()` method properly cleans up:
+
 ```java
 @Override
 public void onDestroy() {

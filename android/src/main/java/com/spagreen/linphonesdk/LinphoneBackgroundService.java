@@ -930,7 +930,7 @@ public class LinphoneBackgroundService extends Service {
         // Load and scale up your custom icon to make it much bigger and more visible
         android.graphics.Bitmap originalIcon = android.graphics.BitmapFactory.decodeResource(
                 getResources(), R.drawable.ic_launcher);
-        
+
         // Scale to 256x256 for maximum visibility in notification
         android.graphics.Bitmap largeIcon = android.graphics.Bitmap.createScaledBitmap(
                 originalIcon, 256, 256, true);
