@@ -4,8 +4,8 @@ version: 0.0.2
 homepage: https://github.com/MuhammadDaniyal32/Linphone-Flutter-Plugin
 
 environment:
-  sdk: '>=3.4.3 <4.0.0'
-  flutter: '>=3.3.0'
+  sdk: ">=3.4.3 <4.0.0"
+  flutter: ">=3.3.0"
 
 dependencies:
   flutter:
@@ -35,7 +35,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.spagreen.linphonesdk
+        package: com.egytelecoms.hatif
         pluginClass: LinphonesdkPlugin
 
   # To add assets to your plugin package, add an assets section, like this:

@@ -1,4 +1,4 @@
-group 'com.spagreen.linphonesdk'
+group 'com.egytelecoms.hatif'
 version '1.0'
 
 buildscript {
@@ -25,7 +25,7 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    namespace 'com.spagreen.linphonesdk'
+    namespace 'com.egytelecoms.hatif'
     compileSdkVersion 31
 
     compileOptions {

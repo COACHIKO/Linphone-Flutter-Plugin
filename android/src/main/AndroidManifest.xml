@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.spagreen.linphonesdk">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -25,8 +24,8 @@
             android:name=".CallActionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.spagreen.linphonesdk.ACTION_ANSWER_CALL" />
-                <action android:name="com.spagreen.linphonesdk.ACTION_DECLINE_CALL" />
+                <action android:name="com.egytelecoms.hatif.ACTION_ANSWER_CALL" />
+                <action android:name="com.egytelecoms.hatif.ACTION_DECLINE_CALL" />
             </intent-filter>
         </receiver>
         
@@ -36,7 +35,7 @@
             android:exported="false"
             android:enabled="true">
             <intent-filter>
-                <action android:name="com.spagreen.linphonesdk.ACTION_INCOMING_CALL" />
+                <action android:name="com.egytelecoms.hatif.ACTION_INCOMING_CALL" />
             </intent-filter>
         </receiver>
 
