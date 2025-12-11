@@ -57,11 +57,27 @@ public class CallActivity extends Activity {
                 updateCallStatus(state);
 
                 if (state == Call.State.End || state == Call.State.Released || state == Call.State.Error) {
-                    finish();
+                    Log.d(TAG, "📴 Call ended, closing activity. State: " + state);
+
+                    // Stop timer
+                    if (timerHandler != null && timerRunnable != null) {
+                        timerHandler.removeCallbacks(timerRunnable);
+                    }
+
+                    // Close activity completely and remove from recent apps
+                    if (!isFinishing()) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                            finishAndRemoveTask();
+                        } else {
+                            finish();
+                        }
+                        Log.d(TAG, "✅ Activity closed and removed from recent apps");
+                    }
                 } else if (state == Call.State.Connected || state == Call.State.StreamsRunning) {
                     if (callStartTime == 0) {
                         callStartTime = System.currentTimeMillis();
                         startCallTimer();
+                        Log.d(TAG, "⏱ Call timer started");
                     }
                 }
             });
@@ -89,6 +105,9 @@ public class CallActivity extends Activity {
 
         setContentView(createCallView());
 
+        // Setup DTMF keypad AFTER setContentView so findViewById works
+        setupDTMFKeypad();
+
         // Get caller info from intent
         String callerName = getIntent().getStringExtra("caller_name");
         String callerNumber = getIntent().getStringExtra("caller_number");
@@ -109,12 +128,31 @@ public class CallActivity extends Activity {
             callerInitial.setText(callerName.substring(0, 1).toUpperCase());
         }
 
-        // Initialize audio routing - default to earpiece
+        // Initialize audio routing - CRITICAL: Proper order for stability
         if (audioManager != null) {
+            Log.d(TAG, "🔧 Initializing audio routing to earpiece");
+
+            // Set mode first
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+
+            // Disable speaker (use earpiece by default)
             audioManager.setSpeakerphoneOn(false);
             isSpeaker = false;
-            Log.d(TAG, "Audio initialized to earpiece mode");
+
+            // Verify audio routing after small delay
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (audioManager != null) {
+                    boolean speakerStatus = audioManager.isSpeakerphoneOn();
+                    int mode = audioManager.getMode();
+                    Log.d(TAG, "✅ Audio initialized - Mode: " + mode + ", Speaker: " + speakerStatus);
+
+                    // Force earpiece again if speaker is still on
+                    if (speakerStatus) {
+                        audioManager.setSpeakerphoneOn(false);
+                        Log.d(TAG, "🔄 Forced earpiece mode again");
+                    }
+                }
+            }, 150);
         }
 
         // CRITICAL FIX: Auto-accept call if launched from notification accept button
@@ -194,63 +232,49 @@ public class CallActivity extends Activity {
         dtmfButton.setOnClickListener(v -> toggleDTMFPanel());
         transferButton.setOnClickListener(v -> showTransferDialog());
 
-        setupDTMFKeypad();
         updateButtonStates();
 
         return view;
     }
 
     private void setupDTMFKeypad() {
-        if (dtmfPanel != null) {
-            GridLayout grid = (GridLayout) dtmfPanel;
-            String[] digits = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#" };
+        // Setup hide button click listener
+        View dtmfHideButton = findViewById(R.id.dtmf_hide);
+        if (dtmfHideButton != null) {
+            dtmfHideButton.setOnClickListener(v -> toggleDTMFPanel());
+            Log.d(TAG, "DTMF hide button listener attached");
+        } else {
+            Log.e(TAG, "DTMF hide button not found!");
+        }
 
-            // Fixed button size for perfect circular buttons
-            int buttonSize = 90; // Fixed size in dp converted to pixels
-            float density = getResources().getDisplayMetrics().density;
-            int buttonSizePx = (int) (buttonSize * density);
+        // Setup DTMF digit buttons
+        int[] dtmfIds = {
+                R.id.dtmf_1, R.id.dtmf_2, R.id.dtmf_3,
+                R.id.dtmf_4, R.id.dtmf_5, R.id.dtmf_6,
+                R.id.dtmf_7, R.id.dtmf_8, R.id.dtmf_9,
+                R.id.dtmf_star, R.id.dtmf_0, R.id.dtmf_hash
+        };
 
-            for (String digit : digits) {
-                TextView button = new TextView(this);
-                button.setText(digit);
-                button.setTextSize(32);
-                button.setTextColor(0xFFFFFFFF);
-                button.setGravity(android.view.Gravity.CENTER);
-                button.setTypeface(null, android.graphics.Typeface.BOLD);
+        String[] digits = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#" };
 
-                // Create a circular background
-                android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
-                drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
-                drawable.setColor(0x50FFFFFF); // Semi-transparent white
-                drawable.setStroke(4, 0x90FFFFFF);
-                button.setBackground(drawable);
-
-                final String digitToSend = digit;
+        for (int i = 0; i < dtmfIds.length; i++) {
+            TextView button = findViewById(dtmfIds[i]);
+            if (button != null) {
+                final String digit = digits[i];
                 button.setOnClickListener(v -> {
-                    sendDTMF(digitToSend);
+                    sendDTMF(digit);
                     // Visual feedback
                     v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(100)
                             .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()).start();
                 });
-
-                GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-                params.width = buttonSizePx;
-                params.height = buttonSizePx;
-                params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                params.setMargins(12, 12, 12, 12);
-                button.setLayoutParams(params);
-
-                grid.addView(button);
+                Log.d(TAG, "DTMF button " + digit + " listener attached");
+            } else {
+                Log.e(TAG, "DTMF button for digit " + digits[i] + " not found!");
             }
-
-            dtmfPanel.setVisibility(View.GONE);
         }
-    }
 
-    private void toggleDTMFPanel() {
         if (dtmfPanel != null) {
-            dtmfPanel.setVisibility(
-                    dtmfPanel.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+            dtmfPanel.setVisibility(View.GONE);
         }
     }
 
@@ -259,6 +283,34 @@ public class CallActivity extends Activity {
         if (core != null && core.getCurrentCall() != null) {
             core.getCurrentCall().sendDtmf(digit.charAt(0));
             Log.d(TAG, "DTMF sent: " + digit);
+        }
+    }
+
+    private void toggleDTMFPanel() {
+        if (dtmfPanel != null) {
+            boolean isVisible = dtmfPanel.getVisibility() == View.VISIBLE;
+
+            if (isVisible) {
+                // Hide with animation
+                dtmfPanel.animate()
+                        .alpha(0f)
+                        .translationY(dtmfPanel.getHeight())
+                        .setDuration(250)
+                        .withEndAction(() -> dtmfPanel.setVisibility(View.GONE))
+                        .start();
+            } else {
+                // Show with animation
+                dtmfPanel.setVisibility(View.VISIBLE);
+                dtmfPanel.setAlpha(0f);
+                dtmfPanel.setTranslationY(dtmfPanel.getHeight());
+                dtmfPanel.animate()
+                        .alpha(1f)
+                        .translationY(0)
+                        .setDuration(300)
+                        .start();
+            }
+
+            Log.d(TAG, "DTMF panel toggled: " + (isVisible ? "hidden" : "visible"));
         }
     }
 
@@ -308,58 +360,129 @@ public class CallActivity extends Activity {
 
     private void toggleSpeaker() {
         Core core = LinphoneBackgroundService.getCore();
-        if (core != null && audioManager != null) {
-            isSpeaker = !isSpeaker;
+        if (core == null || audioManager == null) {
+            Log.e(TAG, "Core or AudioManager is null");
+            return;
+        }
 
+        // Toggle state
+        isSpeaker = !isSpeaker;
+        Log.d(TAG, "🔊 Toggling speaker to: " + isSpeaker);
+
+        try {
+            // Get current call
             Call currentCall = core.getCurrentCall();
             if (currentCall == null && core.getCallsNb() > 0) {
                 currentCall = core.getCalls()[0];
             }
 
-            try {
-                if (isSpeaker) {
-                    // Enable speaker - CRITICAL: Set AudioManager FIRST
-                    audioManager.setSpeakerphoneOn(true);
-                    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            if (currentCall == null) {
+                Log.e(TAG, "No active call found");
+                return;
+            }
 
-                    // Then set in Linphone core
-                    if (currentCall != null) {
+            final Call finalCall = currentCall;
+
+            // Update UI immediately
+            updateButtonStates();
+
+            // CRITICAL FIX: Change AudioManager AND force Linphone to reload audio
+            if (isSpeaker) {
+                Log.d(TAG, "▶ Enabling speaker mode");
+
+                // Stop bluetooth
+                if (audioManager.isBluetoothScoOn()) {
+                    audioManager.stopBluetoothSco();
+                    audioManager.setBluetoothScoOn(false);
+                }
+
+                // Enable speaker via AudioManager
+                audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                audioManager.setSpeakerphoneOn(true);
+
+                // Boost volume
+                int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+                int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+                if (currentVolume < maxVolume * 0.7) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, (int) (maxVolume * 0.8), 0);
+                }
+
+                // CRITICAL: Force Linphone to reload audio devices
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        // Find and set speaker device
                         AudioDevice[] devices = core.getAudioDevices();
-                        Log.d(TAG, "Available audio devices: " + devices.length);
+                        AudioDevice speakerDevice = null;
 
                         for (AudioDevice device : devices) {
-                            Log.d(TAG, "Device: " + device.getDeviceName() + " Type: " + device.getType());
                             if (device.getType() == AudioDevice.Type.Speaker) {
-                                currentCall.setOutputAudioDevice(device);
-                                Log.d(TAG, "Speaker device set: " + device.getDeviceName());
+                                speakerDevice = device;
                                 break;
                             }
                         }
-                    }
-                    Log.d(TAG, "Speaker enabled - AudioManager: " + audioManager.isSpeakerphoneOn());
-                } else {
-                    // Use earpiece - CRITICAL: Set AudioManager FIRST
-                    audioManager.setSpeakerphoneOn(false);
-                    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
-                    // Then set in Linphone core
-                    if (currentCall != null) {
+                        if (speakerDevice != null) {
+                            // Set on both call and core
+                            finalCall.setOutputAudioDevice(speakerDevice);
+                            core.setOutputAudioDevice(speakerDevice);
+                            Log.d(TAG, "✅ Forced Linphone to use speaker: " + speakerDevice.getDeviceName());
+                        } else {
+                            Log.e(TAG, "❌ No speaker device found");
+                        }
+
+                        // Final verification
+                        boolean actualState = audioManager.isSpeakerphoneOn();
+                        Log.d(TAG, "🔍 Final check - AudioManager: " + actualState);
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Error setting speaker", e);
+                    }
+                }, 150);
+
+            } else {
+                Log.d(TAG, "▶ Disabling speaker, using earpiece");
+
+                // Disable speaker via AudioManager
+                audioManager.setSpeakerphoneOn(false);
+                audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+
+                // CRITICAL: Force Linphone to reload audio devices
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try {
+                        // Find and set earpiece device
                         AudioDevice[] devices = core.getAudioDevices();
+                        AudioDevice earpieceDevice = null;
 
                         for (AudioDevice device : devices) {
                             if (device.getType() == AudioDevice.Type.Earpiece) {
-                                currentCall.setOutputAudioDevice(device);
-                                Log.d(TAG, "Earpiece device set: " + device.getDeviceName());
+                                earpieceDevice = device;
                                 break;
                             }
                         }
+
+                        if (earpieceDevice != null) {
+                            // Set on both call and core
+                            finalCall.setOutputAudioDevice(earpieceDevice);
+                            core.setOutputAudioDevice(earpieceDevice);
+                            Log.d(TAG, "✅ Forced Linphone to use earpiece: " + earpieceDevice.getDeviceName());
+                        } else {
+                            Log.w(TAG, "⚠️ No earpiece device found");
+                        }
+
+                        // Final verification
+                        boolean actualState = audioManager.isSpeakerphoneOn();
+                        Log.d(TAG, "🔍 Final check - AudioManager: " + actualState);
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "❌ Error setting earpiece", e);
                     }
-                    Log.d(TAG, "Earpiece enabled - AudioManager: " + audioManager.isSpeakerphoneOn());
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error toggling speaker", e);
-                e.printStackTrace();
+                }, 150);
             }
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Critical error toggling speaker", e);
+            e.printStackTrace();
+            isSpeaker = !isSpeaker;
             updateButtonStates();
         }
     }
@@ -434,6 +557,7 @@ public class CallActivity extends Activity {
     }
 
     private void hangupCall() {
+        Log.d(TAG, "Hangup button pressed");
         Core core = LinphoneBackgroundService.getCore();
         if (core != null && core.getCallsNb() > 0) {
             Call call = core.getCurrentCall();
@@ -441,10 +565,17 @@ public class CallActivity extends Activity {
                 call = core.getCalls()[0];
 
             if (call != null) {
+                Log.d(TAG, "Terminating call, current state: " + call.getState());
                 call.terminate();
             }
+        } else {
+            Log.w(TAG, "No active call found, finishing activity anyway");
         }
-        finish();
+
+        // Always finish the activity when hangup is pressed
+        if (!isFinishing()) {
+            finish();
+        }
     }
 
     private void updateCallStatus(Call.State state) {

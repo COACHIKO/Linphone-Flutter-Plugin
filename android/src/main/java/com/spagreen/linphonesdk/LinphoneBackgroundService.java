@@ -987,19 +987,23 @@ public class LinphoneBackgroundService extends Service {
                     setEarpieceOnCallStart(call);
                     // Launch call activity (NO NOTIFICATION)
                     launchCallActivity(call);
-                    updateNotification("HATIF", "Call connected", true);
+                    // Show ongoing call notification with timer if CallActivity is not visible
+                    if (!isCallActivityVisible) {
+                        Log.d(TAG, "📱 Call connected, showing notification with timer");
+                        showOngoingCallNotification(call);
+                    } else {
+                        Log.d(TAG, "CallActivity visible, skipping notification");
+                    }
                     break;
                 case End:
                 case Released:
                 case Error:
                     // Stop ringtone
                     stopRingtone();
-                    // Clean up (no notifications to dismiss)
+                    // Dismiss ongoing call notification and restore service notification
+                    dismissOngoingCallNotification();
+                    // Clean up
                     Log.d(TAG, "Call ended");
-                    SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-                    String username = prefs.getString(KEY_USERNAME, "Unknown");
-                    String domain = prefs.getString(KEY_DOMAIN, "");
-                    updateNotification("HATIF", "Ready for calls", true);
                     break;
             }
         }
@@ -1161,8 +1165,15 @@ public class LinphoneBackgroundService extends Service {
     }
 
     private void showOngoingCallNotification(Call call) {
-        Log.d(TAG, "showOngoingCallNotification called");
-        Log.d(TAG, "Creating ongoing call notification...");
+        Log.d(TAG, "📱 showOngoingCallNotification called");
+        Log.d(TAG, "📱 Call state: " + call.getState());
+        Log.d(TAG, "📱 isCallActivityVisible: " + isCallActivityVisible);
+
+        if (call == null) {
+            Log.e(TAG, "❌ Cannot show notification - call is null");
+            return;
+        }
+
         try {
             String callerName = call.getRemoteAddress().getDisplayName();
             String callerNumber = call.getRemoteAddress().getUsername();
@@ -1246,21 +1257,39 @@ public class LinphoneBackgroundService extends Service {
             notificationUpdateHandler = new Handler(Looper.getMainLooper());
         }
 
-        final long[] callStartTime = { System.currentTimeMillis() };
+        // Set call start time based on call state
+        final long[] callStartTime = new long[1];
+        if (call.getState() == Call.State.Connected || call.getState() == Call.State.StreamsRunning) {
+            callStartTime[0] = System.currentTimeMillis();
+            Log.d(TAG, "⏱ Call already connected, starting timer immediately");
+        } else {
+            callStartTime[0] = System.currentTimeMillis();
+            Log.d(TAG, "⏱ Call not yet connected, timer will start on connect");
+        }
 
         notificationUpdateRunnable = new Runnable() {
             @Override
             public void run() {
                 try {
-                    if (call.getState() == Call.State.Connected || call.getState() == Call.State.StreamsRunning) {
+                    // Check if call is still active
+                    Call currentCall = core != null ? core.getCurrentCall() : null;
+                    if (currentCall == null) {
+                        Log.d(TAG, "⚠️ No active call, stopping notification timer");
+                        return;
+                    }
+
+                    Call.State currentState = currentCall.getState();
+                    Log.d(TAG, "🔄 Updating notification timer - Call state: " + currentState);
+
+                    if (currentState == Call.State.Connected || currentState == Call.State.StreamsRunning) {
                         long elapsedMillis = System.currentTimeMillis() - callStartTime[0];
                         int seconds = (int) (elapsedMillis / 1000);
                         int minutes = seconds / 60;
                         seconds = seconds % 60;
                         String timeString = String.format("%02d:%02d", minutes, seconds);
 
-                        String callerName = call.getRemoteAddress().getDisplayName();
-                        String callerNumber = call.getRemoteAddress().getUsername();
+                        String callerName = currentCall.getRemoteAddress().getDisplayName();
+                        String callerNumber = currentCall.getRemoteAddress().getUsername();
                         if (callerName == null || callerName.isEmpty()) {
                             callerName = callerNumber;
                         }
@@ -1312,19 +1341,28 @@ public class LinphoneBackgroundService extends Service {
                         if (notificationManager != null) {
                             // Use the same notification ID as the service notification
                             notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+                            Log.d(TAG, "✅ Notification updated with timer: " + timeString);
                         }
 
                         // Schedule next update in 1 second
                         notificationUpdateHandler.postDelayed(this, 1000);
+                    } else {
+                        Log.d(TAG,
+                                "Call state changed to: " + currentCall.getState() + ", stopping notification timer");
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Error updating notification timer", e);
+                    // Stop timer on error
+                    if (notificationUpdateHandler != null) {
+                        notificationUpdateHandler.removeCallbacks(this);
+                    }
                 }
             }
         };
 
         // Start the timer
         notificationUpdateHandler.post(notificationUpdateRunnable);
+        Log.d(TAG, "📱 Notification timer started for ongoing call");
     }
 
     private void dismissOngoingCallNotification() {

@@ -1,340 +1,531 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/call_background_gradient"
-    android:padding="0dp">
+    android:layout_height="match_parent">
 
-    <!-- Caller Info Section -->
-    <LinearLayout
-        android:id="@+id/caller_info_section"
+    <!-- Main Call Screen -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/root_call_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
+        android:layout_height="match_parent"
+        android:background="@drawable/call_background_gradient">
 
-        <!-- Avatar with animated ring -->
-        <FrameLayout
-            android:layout_width="140dp"
-            android:layout_height="140dp">
+        <!-- Caller Info Section -->
+        <LinearLayout
+            android:id="@+id/caller_info_section"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingTop="48dp"
+            android:paddingBottom="24dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- Outer ring for visual effect -->
-            <View
-                android:layout_width="140dp"
-                android:layout_height="140dp"
-                android:background="@drawable/avatar_circle_background"
-                android:alpha="0.3"/>
-
+            <!-- Pulse Animation Rings with Avatar -->
             <FrameLayout
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_gravity="center"
-                android:background="@drawable/avatar_circle_background"
-                android:elevation="4dp">
+                android:layout_width="160dp"
+                android:layout_height="160dp">
+
+                <View
+                    android:id="@+id/pulse_ring_outer"
+                    android:layout_width="160dp"
+                    android:layout_height="160dp"
+                    android:background="@drawable/avatar_circle_background"
+                    android:alpha="0.15" />
+
+                <View
+                    android:id="@+id/pulse_ring_inner"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/avatar_circle_background"
+                    android:alpha="0.25" />
+
+                <FrameLayout
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/avatar_circle_background"
+                    android:elevation="8dp">
+
+                    <TextView
+                        android:id="@+id/caller_initial"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="?"
+                        android:textColor="#FFFFFF"
+                        android:textSize="52sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"
+                        android:shadowColor="#40000000"
+                        android:shadowRadius="4"
+                        android:shadowDx="0"
+                        android:shadowDy="2" />
+                </FrameLayout>
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/caller_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="Unknown Caller"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:shadowColor="#40000000"
+                android:shadowRadius="3"
+                android:shadowDx="0"
+                android:shadowDy="1" />
+
+            <TextView
+                android:id="@+id/caller_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="+1234567890"
+                android:textColor="#F0F0F0"
+                android:textSize="17sp"
+                android:fontFamily="sans-serif-light"
+                android:letterSpacing="0.05" />
+
+            <!-- Status Badge -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/dtmf_panel_background"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <View
+                    android:id="@+id/status_indicator"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/avatar_circle_background"
+                    android:backgroundTint="#4CAF50" />
 
                 <TextView
-                    android:id="@+id/caller_initial"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="?"
+                    android:id="@+id/call_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="Connected"
+                    android:textColor="#E0E0E0"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif-medium" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="#60FFFFFF" />
+
+                <TextView
+                    android:id="@+id/call_timer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
                     android:textColor="#FFFFFF"
-                    android:textSize="52sp"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-mono" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Call Controls Container -->
+        <LinearLayout
+            android:id="@+id/call_controls_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="40dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- First Row: Mute | Keypad | Speaker -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingBottom="20dp">
+
+                <!-- Mute Button -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/mute_button"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:background="@drawable/call_control_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp">
+
+                        <ImageView
+                            android:id="@+id/mute_icon"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_mic_on"
+                            android:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/mute_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Mute"
+                        android:textColor="#F5F5F5"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:alpha="0.9" />
+                </LinearLayout>
+
+                <!-- Keypad Button -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/dtmf_button"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:background="@drawable/call_control_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp">
+
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_gravity="center"
+                            android:src="@android:drawable/ic_menu_call"
+                            android:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Keypad"
+                        android:textColor="#F5F5F5"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:alpha="0.9" />
+                </LinearLayout>
+
+                <!-- Speaker Button -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/speaker_button"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:background="@drawable/call_control_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp">
+
+                        <ImageView
+                            android:id="@+id/speaker_icon"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_speaker"
+                            android:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/speaker_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Speaker"
+                        android:textColor="#F5F5F5"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:alpha="0.9" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Second Row: Hold | Hangup | Transfer -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <!-- Hold Button -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/hold_button"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:background="@drawable/call_control_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp">
+
+                        <ImageView
+                            android:id="@+id/hold_icon"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_pause"
+                            android:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/hold_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Hold"
+                        android:textColor="#F5F5F5"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:alpha="0.9" />
+                </LinearLayout>
+
+                <!-- Hangup Button -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/hangup_button"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:background="@drawable/button_decline_background"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="10dp">
+
+                        <ImageView
+                            android:layout_width="38dp"
+                            android:layout_height="37dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_call_end"
+                            android:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="End Call"
+                        android:textColor="#FF5252"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium" />
+                </LinearLayout>
+
+                <!-- Transfer Button -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <FrameLayout
+                        android:id="@+id/transfer_button"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:background="@drawable/call_control_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="6dp">
+
+                        <ImageView
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_gravity="center"
+                            android:src="@android:drawable/ic_menu_share"
+                            android:tint="#FFFFFF" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Transfer"
+                        android:textColor="#F5F5F5"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:alpha="0.9" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- DTMF Keypad Overlay -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/dtmf_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="16dp"
+        app:cardBackgroundColor="#E0000000">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Keypad Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="DTMF Keypad"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-medium" />
-            </FrameLayout>
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/caller_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Unknown Caller"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
-            android:maxLines="1"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/caller_number"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="+1234567890"
-            android:textColor="#E8E8E8"
-            android:textSize="17sp"
-            android:fontFamily="sans-serif-light" />
-
-        <TextView
-            android:id="@+id/call_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Connected"
-            android:textColor="#C0C0C0"
-            android:textSize="15sp"
-            android:fontFamily="sans-serif" />
-
-        <TextView
-            android:id="@+id/call_timer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="00:00"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium" />
-    </LinearLayout>
-
-    <!-- Call Controls -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="48dp"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
-
-        <!-- DTMF Keypad (Hidden by default) -->
-        <GridLayout
-            android:id="@+id/dtmf_panel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginBottom="20dp"
-            android:columnCount="3"
-            android:rowCount="4"
-            android:visibility="gone"
-            android:elevation="2dp"
-            android:useDefaultMargins="false"
-            android:alignmentMode="alignBounds" />
-
-        <!-- Main Control Buttons Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingBottom="24dp">
-
-            <!-- Mute Button -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/mute_button"
-                    android:layout_width="68dp"
-                    android:layout_height="68dp"
-                    android:background="@drawable/call_control_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="4dp">
-
-                    <ImageView
-                        android:id="@+id/mute_icon"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_mic_on"
-                        android:tint="#FFFFFF" />
-                </FrameLayout>
 
                 <TextView
-                    android:id="@+id/mute_label"
+                    android:id="@+id/dtmf_hide"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Mute"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif-medium" />
-            </LinearLayout>
-
-            <!-- Speaker Button -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/speaker_button"
-                    android:layout_width="68dp"
-                    android:layout_height="68dp"
-                    android:background="@drawable/call_control_button"
+                    android:text="✕ Close"
+                    android:textColor="#FF5252"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:padding="8dp"
                     android:clickable="true"
                     android:focusable="true"
-                    android:elevation="4dp">
-
-                    <ImageView
-                        android:id="@+id/speaker_icon"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_speaker"
-                        android:tint="#FFFFFF" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/speaker_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Speaker"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif-medium" />
+                    android:background="?attr/selectableItemBackgroundBorderless" />
             </LinearLayout>
 
-            <!-- Hold Button -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <!-- DTMF Grid -->
+            <GridLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/hold_button"
-                    android:layout_width="68dp"
-                    android:layout_height="68dp"
-                    android:background="@drawable/call_control_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="4dp">
-
-                    <ImageView
-                        android:id="@+id/hold_icon"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_pause"
-                        android:tint="#FFFFFF" />
-                </FrameLayout>
-
-                <TextView
-                    android:id="@+id/hold_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Hold"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif-medium" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Secondary Control Buttons Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingBottom="28dp">
-
-            <!-- Keypad Button -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/dtmf_button"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/call_control_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="4dp">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_call"
-                        android:tint="#FFFFFF" />
-                </FrameLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Keypad"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif-medium" />
-            </LinearLayout>
-
-            <!-- Transfer Button -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <FrameLayout
-                    android:id="@+id/transfer_button"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/call_control_button"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="4dp">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_gravity="center"
-                        android:src="@android:drawable/ic_menu_share"
-                        android:tint="#FFFFFF" />
-                </FrameLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Transfer"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif-medium" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Hangup Button -->
-        <FrameLayout
-            android:id="@+id/hangup_button"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/button_decline_background"
-            android:clickable="true"
-            android:focusable="true"
-            android:elevation="6dp">
-
-            <ImageView
-                android:layout_width="36dp"
-                android:layout_height="35dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_call_end"
-                android:tint="#FFFFFF" />
-        </FrameLayout>
-    </LinearLayout>
+                android:columnCount="3"
+                android:rowCount="4"
+                android:useDefaultMargins="false"
+                android:alignmentMode="alignMargins">
 
-</RelativeLayout>
+                <TextView
+                    android:id="@+id/dtmf_1"
+                    style="@style/DtmfKeyStyle"
+                    android:text="1" />
+
+                <TextView
+                    android:id="@+id/dtmf_2"
+                    style="@style/DtmfKeyStyle"
+                    android:text="2" />
+
+                <TextView
+                    android:id="@+id/dtmf_3"
+                    style="@style/DtmfKeyStyle"
+                    android:text="3" />
+
+                <TextView
+                    android:id="@+id/dtmf_4"
+                    style="@style/DtmfKeyStyle"
+                    android:text="4" />
+
+                <TextView
+                    android:id="@+id/dtmf_5"
+                    style="@style/DtmfKeyStyle"
+                    android:text="5" />
+
+                <TextView
+                    android:id="@+id/dtmf_6"
+                    style="@style/DtmfKeyStyle"
+                    android:text="6" />
+
+                <TextView
+                    android:id="@+id/dtmf_7"
+                    style="@style/DtmfKeyStyle"
+                    android:text="7" />
+
+                <TextView
+                    android:id="@+id/dtmf_8"
+                    style="@style/DtmfKeyStyle"
+                    android:text="8" />
+
+                <TextView
+                    android:id="@+id/dtmf_9"
+                    style="@style/DtmfKeyStyle"
+                    android:text="9" />
+
+                <TextView
+                    android:id="@+id/dtmf_star"
+                    style="@style/DtmfKeyStyle"
+                    android:text="*" />
+
+                <TextView
+                    android:id="@+id/dtmf_0"
+                    style="@style/DtmfKeyStyle"
+                    android:text="0" />
+
+                <TextView
+                    android:id="@+id/dtmf_hash"
+                    style="@style/DtmfKeyStyle"
+                    android:text="#" />
+            </GridLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</FrameLayout>
