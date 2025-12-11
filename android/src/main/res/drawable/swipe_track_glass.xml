@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- Outer glow effect -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="36dp" />
+            <gradient
+                android:angle="90"
+                android:startColor="#15FFFFFF"
+                android:centerColor="#0AFFFFFF"
+                android:endColor="#05FFFFFF"
+                android:type="linear" />
+        </shape>
+    </item>
+    
+    <!-- Glass morphism background -->
+    <item android:top="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="36dp" />
+            <solid android:color="#0DFFFFFF" />
+        </shape>
+    </item>
+    
+    <!-- Gradient border - Green to Blue -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="36dp" />
+            <stroke
+                android:width="2dp"
+                android:color="#00000000" />
+            <gradient
+                android:angle="0"
+                android:startColor="#4000E676"
+                android:centerColor="#40009688"
+                android:endColor="#4000BCD4"
+                android:type="linear" />
+        </shape>
+    </item>
+    
+    <!-- Inner subtle gradient -->
+    <item android:top="2dp" android:bottom="2dp" android:left="2dp" android:right="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="34dp" />
+            <gradient
+                android:angle="270"
+                android:startColor="#12FFFFFF"
+                android:endColor="#08FFFFFF"
+                android:type="linear" />
+        </shape>
+    </item>
+    
+</layer-list>

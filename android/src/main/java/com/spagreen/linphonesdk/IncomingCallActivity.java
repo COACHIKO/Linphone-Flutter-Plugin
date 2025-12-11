@@ -10,11 +10,16 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.linphoneflutterplugin.IncomingCallAnimationHelper;
 
 import org.linphone.core.Call;
 import org.linphone.core.CallParams;
@@ -29,6 +34,14 @@ public class IncomingCallActivity extends Activity {
 
     private TextView callerNameText;
     private TextView callerNumberText;
+
+    // Swipe gesture views
+    private FrameLayout swipeButton;
+    private FrameLayout swipeContainer;
+    private LinearLayout declineHint;
+    private LinearLayout acceptHint;
+    private float initialX;
+    private float swipeThreshold = 200f; // pixels to trigger action
 
     private Ringtone ringtone;
     private PowerManager.WakeLock wakeLock;
@@ -54,23 +67,34 @@ public class IncomingCallActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Show when locked
+        // CRITICAL: Make sure this activity appears above EVERYTHING including lock
+        // screen
+        Window window = getWindow();
+
+        // For Android 8.0+ (Oreo) - use new APIs
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
+            KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            keyguardManager.requestDismissKeyguard(this, null);
         } else {
-            Window window = getWindow();
+            // For older versions - use window flags
             window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
             window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         }
 
-        // Dismiss keyguard
-        KeyguardManager keyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            keyguardManager.requestDismissKeyguard(this, null);
+        // Essential flags for all versions
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        window.addFlags(WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON);
+
+        // Make it full screen for better visibility
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(getResources().getColor(android.R.color.black));
         }
 
-        // Wake lock
+        // Wake lock - ensure screen turns on and stays on
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(
                 PowerManager.FULL_WAKE_LOCK |
@@ -120,8 +144,17 @@ public class IncomingCallActivity extends Activity {
         callerNameText = view.findViewById(R.id.caller_name);
         callerNumberText = view.findViewById(R.id.caller_number);
         TextView callerInitial = view.findViewById(R.id.caller_initial);
-        View acceptButton = view.findViewById(R.id.accept_button);
-        View declineButton = view.findViewById(R.id.decline_button);
+
+        // Find animation views
+        View pulseRingOuter = view.findViewById(R.id.pulse_ring_outer);
+        View pulseRingInner = view.findViewById(R.id.pulse_ring_inner);
+        View avatarContainer = view.findViewById(R.id.avatar_container);
+        LinearLayout callerInfo = view.findViewById(R.id.caller_info);
+        swipeContainer = view.findViewById(R.id.swipe_container);
+        declineHint = view.findViewById(R.id.decline_hint);
+        acceptHint = view.findViewById(R.id.accept_hint);
+        swipeButton = view.findViewById(R.id.swipe_button);
+        View swipeInstruction = view.findViewById(R.id.swipe_instruction);
 
         // Set caller info
         callerNameText.setText(callerName);
@@ -134,22 +167,92 @@ public class IncomingCallActivity extends Activity {
         }
         callerInitial.setText(initial);
 
-        // Set click listeners
-        acceptButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                acceptCall();
-            }
-        });
+        // Start all animations
+        IncomingCallAnimationHelper.startAllAnimations(
+                pulseRingOuter,
+                pulseRingInner,
+                avatarContainer,
+                callerInfo,
+                swipeContainer,
+                declineHint,
+                acceptHint,
+                swipeButton,
+                swipeInstruction);
 
-        declineButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                declineCall();
-            }
-        });
+        // Set up swipe gesture
+        setupSwipeGesture();
 
         return view;
+    }
+
+    private void setupSwipeGesture() {
+        swipeButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = event.getRawX();
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float deltaX = event.getRawX() - initialX;
+
+                        // Constrain movement to container width
+                        float maxDistance = swipeContainer.getWidth() / 2f - swipeButton.getWidth() / 2f;
+                        deltaX = Math.max(-maxDistance, Math.min(maxDistance, deltaX));
+
+                        // Animate button during drag
+                        IncomingCallAnimationHelper.animateSwipeDrag(swipeButton, deltaX, maxDistance);
+
+                        // Highlight hints based on direction
+                        if (Math.abs(deltaX) > swipeThreshold / 2) {
+                            if (deltaX > 0) {
+                                IncomingCallAnimationHelper.animateHintGlow(acceptHint, true);
+                                IncomingCallAnimationHelper.animateHintGlow(declineHint, false);
+                            } else {
+                                IncomingCallAnimationHelper.animateHintGlow(acceptHint, false);
+                                IncomingCallAnimationHelper.animateHintGlow(declineHint, true);
+                            }
+                        } else {
+                            IncomingCallAnimationHelper.animateHintGlow(acceptHint, false);
+                            IncomingCallAnimationHelper.animateHintGlow(declineHint, false);
+                        }
+
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        float finalDeltaX = event.getRawX() - initialX;
+
+                        if (finalDeltaX > swipeThreshold) {
+                            // Swipe right - Accept
+                            IncomingCallAnimationHelper.animateSwipeAccept(swipeButton, swipeContainer, new Runnable() {
+                                @Override
+                                public void run() {
+                                    acceptCall();
+                                }
+                            });
+                        } else if (finalDeltaX < -swipeThreshold) {
+                            // Swipe left - Decline
+                            IncomingCallAnimationHelper.animateSwipeDecline(swipeButton, swipeContainer,
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            declineCall();
+                                        }
+                                    });
+                        } else {
+                            // Return to center
+                            IncomingCallAnimationHelper.animateSwipeReturn(swipeButton);
+                            IncomingCallAnimationHelper.animateHintGlow(acceptHint, false);
+                            IncomingCallAnimationHelper.animateHintGlow(declineHint, false);
+                        }
+
+                        return true;
+                }
+                return false;
+            }
+        });
     }
 
     private void playRingtone() {

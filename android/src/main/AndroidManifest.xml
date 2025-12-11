@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.USE_SIP" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <application
         android:usesCleartextTraffic="true">
@@ -23,6 +27,16 @@
             <intent-filter>
                 <action android:name="com.spagreen.linphonesdk.ACTION_ANSWER_CALL" />
                 <action android:name="com.spagreen.linphonesdk.ACTION_DECLINE_CALL" />
+            </intent-filter>
+        </receiver>
+        
+        <!-- BroadcastReceiver for launching IncomingCallActivity from terminated state -->
+        <receiver
+            android:name=".IncomingCallReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.spagreen.linphonesdk.ACTION_INCOMING_CALL" />
             </intent-filter>
         </receiver>
 

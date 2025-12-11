@@ -300,6 +300,9 @@ public class LinphoneBackgroundService extends Service {
         final Call call = tempCall; // Make it final for lambda
 
         try {
+            // Dismiss the incoming call notification
+            dismissIncomingCallNotification();
+
             // Send broadcast immediately to close IncomingCallActivity
             Intent closeIncomingIntent = new Intent("com.spagreen.linphonesdk.CLOSE_INCOMING_CALL");
             sendBroadcast(closeIncomingIntent);
@@ -361,12 +364,15 @@ public class LinphoneBackgroundService extends Service {
         }
 
         try {
-            // Step 2: Close IncomingCallActivity to prevent UI conflicts
+            // Step 2: Dismiss incoming call notification
+            dismissIncomingCallNotification();
+
+            // Step 3: Close IncomingCallActivity to prevent UI conflicts
             Intent closeIncomingIntent = new Intent("com.spagreen.linphonesdk.CLOSE_INCOMING_CALL");
             sendBroadcast(closeIncomingIntent);
             Log.d(TAG, "✓ Broadcast sent to close IncomingCallActivity");
 
-            // Step 3: Accept the call
+            // Step 4: Accept the call
             call.accept();
             Log.d(TAG, "✓ Call accepted successfully");
             currentIncomingCall = null;
@@ -458,6 +464,13 @@ public class LinphoneBackgroundService extends Service {
             call.decline(org.linphone.core.Reason.Declined);
             Log.d(TAG, "Call declined");
             currentIncomingCall = null;
+
+            // Dismiss the incoming call notification
+            dismissIncomingCallNotification();
+
+            // Also send broadcast to close IncomingCallActivity
+            Intent closeIncomingIntent = new Intent("com.spagreen.linphonesdk.CLOSE_INCOMING_CALL");
+            sendBroadcast(closeIncomingIntent);
         } catch (Exception e) {
             Log.e(TAG, "Error declining call", e);
         }
@@ -970,14 +983,10 @@ public class LinphoneBackgroundService extends Service {
                 case StreamsRunning:
                     // Stop ringtone
                     stopRingtone();
-                    // Dismiss incoming call notification
-                    dismissIncomingCallNotification();
                     // Set earpiece as default audio device when call connects
                     setEarpieceOnCallStart(call);
-                    // Launch call activity first (will set visibility flag)
+                    // Launch call activity (NO NOTIFICATION)
                     launchCallActivity(call);
-                    // Show ongoing call notification (will check visibility flag)
-                    showOngoingCallNotification(call);
                     updateNotification("HATIF", "Call connected", true);
                     break;
                 case End:
@@ -985,9 +994,8 @@ public class LinphoneBackgroundService extends Service {
                 case Error:
                     // Stop ringtone
                     stopRingtone();
-                    // Dismiss all call notifications
-                    dismissIncomingCallNotification();
-                    dismissOngoingCallNotification();
+                    // Clean up (no notifications to dismiss)
+                    Log.d(TAG, "Call ended");
                     SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
                     String username = prefs.getString(KEY_USERNAME, "Unknown");
                     String domain = prefs.getString(KEY_DOMAIN, "");
@@ -998,7 +1006,7 @@ public class LinphoneBackgroundService extends Service {
     };
 
     private void handleIncomingCall(Call call) {
-        Log.d(TAG, "handleIncomingCall: Launching IncomingCallActivity");
+        Log.d(TAG, "handleIncomingCall: Launching IncomingCallActivity with overlay approach");
 
         // Play ringtone
         playRingtone();
@@ -1006,72 +1014,25 @@ public class LinphoneBackgroundService extends Service {
         // Store the current call reference
         currentIncomingCall = call;
 
-        // Create intent for the incoming call activity
-        Intent intent = new Intent(this, IncomingCallActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra("caller_name", call.getRemoteAddress().getDisplayName());
-        intent.putExtra("caller_number", call.getRemoteAddress().getUsername());
-
-        // Create full-screen intent for incoming call notification
-        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // CRITICAL FIX: Create accept action that DIRECTLY launches CallActivity
-        // This ensures the UI always appears when accept is pressed
-        Intent acceptActivityIntent = new Intent(this, CallActivity.class);
-        acceptActivityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        acceptActivityIntent.putExtra("caller_name", call.getRemoteAddress().getDisplayName());
-        acceptActivityIntent.putExtra("caller_number", call.getRemoteAddress().getUsername());
-        acceptActivityIntent.putExtra("accept_on_create", true); // Signal to accept immediately
-
-        PendingIntent acceptPendingIntent = PendingIntent.getActivity(
-                this,
-                1,
-                acceptActivityIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // Create decline action intent - use broadcast instead of service to avoid
-        // restart
-        Intent declineIntent = new Intent(CallActionReceiver.ACTION_DECLINE_CALL);
-        declineIntent.setPackage(getPackageName()); // Required for security
-        PendingIntent declinePendingIntent = PendingIntent.getBroadcast(
-                this,
-                2,
-                declineIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // Show incoming call notification with full-screen intent
         String callerName = call.getRemoteAddress().getDisplayName();
-        if (callerName == null || callerName.isEmpty()) {
-            callerName = call.getRemoteAddress().getUsername();
-        }
+        String callerNumber = call.getRemoteAddress().getUsername();
 
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, INCOMING_CALL_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_menu_call)
-                .setContentTitle("Incoming Call")
-                .setContentText(callerName)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setFullScreenIntent(fullScreenPendingIntent, true)
-                .setAutoCancel(false)
-                .setOngoing(true)
-                .addAction(android.R.drawable.ic_menu_call, "Accept", acceptPendingIntent)
-                .addAction(android.R.drawable.ic_delete, "Decline", declinePendingIntent);
+        // Create intent for IncomingCallActivity with special flags for overlay
+        Intent intent = new Intent(this, IncomingCallActivity.class);
+        intent.putExtra("caller_name", callerName);
+        intent.putExtra("caller_number", callerNumber);
 
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationManager != null) {
-            notificationManager.notify(INCOMING_CALL_NOTIFICATION_ID, notificationBuilder.build());
-        }
+        // Critical flags for showing activity from background
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+        intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
 
-        // Also try to start the activity directly
         try {
             startActivity(intent);
-            Log.d(TAG, "handleIncomingCall: Activity started successfully");
+            Log.d(TAG, "✓ IncomingCallActivity launched with overlay flags");
         } catch (Exception e) {
-            Log.e(TAG, "handleIncomingCall: Failed to start activity", e);
+            Log.e(TAG, "❌ Failed to launch IncomingCallActivity", e);
+            e.printStackTrace();
         }
     }
 
